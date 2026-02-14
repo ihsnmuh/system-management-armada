@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Public_Sans } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./providers/query-provider";
-import Navbar from "./components/Navbar";
+import Navbar from "@/components/Navbar";
+
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 
 const inter = Inter({
   variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const publicSans = Public_Sans({
+  variable: "--font-public-sans",
   subsets: ["latin"],
 });
 
@@ -22,11 +29,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${inter.variable} ${publicSans.variable} antialiased`}
       >
         <QueryProvider>
           <Navbar />
           <main>{children}</main>
+          <ReactQueryDevtools initialIsOpen={false} />
         </QueryProvider>
       </body>
     </html>
