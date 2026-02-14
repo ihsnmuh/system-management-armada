@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -161,5 +161,8 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .layout {
+    @apply flex flex-col p-4 mx-auto max-w-7xl min-h-screen bg-background text-foreground;
   }
 }
