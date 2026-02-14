@@ -1,15 +1,23 @@
-// Common response wrappers
+// MBTA JSON:API response format
 export interface ApiResponse<T> {
   data: T;
-  message?: string;
+  links?: PaginationLinks;
 }
 
-export interface PaginatedResponse<T> {
+export interface ApiListResponse<T> {
   data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  links?: PaginationLinks;
+}
+
+export interface PaginationLinks {
+  first?: string;
+  last?: string;
+  next?: string | null;
+  prev?: string | null;
+}
+
+// Pagination params untuk query
+export interface PaginationParams {
+  limit?: number;
+  offset?: number;
 }
