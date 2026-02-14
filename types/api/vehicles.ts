@@ -15,7 +15,7 @@ export interface VehicleAttributes {
   label: string;
   latitude: number;
   longitude: number;
-  occupancy_status: unknown;
+  occupancy_status: VehicleOccupancyStatus;
   revenue: string;
   speed: unknown;
   updated_at: string;
@@ -52,4 +52,18 @@ export interface VehicleTrip {
 export interface RelationshipData {
   id: string;
   type: string;
+}
+
+export enum VehicleCurrentStatus {
+  STOPPED_AT = 'STOPPED_AT',
+  INCOMING_AT = 'INCOMING_AT',
+  IN_TRANSIT_TO = 'IN_TRANSIT_TO',
+}
+
+export enum VehicleOccupancyStatus {
+  MANY_SEATS_AVAILABLE = 'MANY_SEATS_AVAILABLE',
+  FEW_SEATS_AVAILABLE = 'FEW_SEATS_AVAILABLE',
+  FULL = 'FULL',
+  NO_DATA_AVAILABLE = 'NO_DATA_AVAILABLE',
+  UNKNOWN = 'UNKNOWN',
 }

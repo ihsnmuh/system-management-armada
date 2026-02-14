@@ -1,7 +1,6 @@
 import { apiClient } from '../client';
 import type {
   Vehicle,
-  ApiResponse,
   ApiListResponse,
   PaginationParams,
 } from '@/types/api';
