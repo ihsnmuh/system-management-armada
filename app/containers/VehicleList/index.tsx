@@ -109,7 +109,7 @@ const ContainerVehicleList = () => {
           </>
         ) : (
           <>
-            <Field orientation="horizontal" className="w-fit">
+            <Field orientation="horizontal" className="w-fit text-primary">
               <FieldLabel htmlFor="select-rows-per-page">
                 {totalItems !== null
                   ? `Menampilkan ${startItem} - ${endItem} dari ${totalItems} data`
