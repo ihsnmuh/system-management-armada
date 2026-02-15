@@ -1,129 +1,153 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Field, FieldLabel } from '@/components/ui/field';
-import {
-  Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxValue,
-  useComboboxAnchor,
-} from '@/components/ui/combobox';
-import { cn } from '@/lib/utils';
+import InfiniteFilterDropdown from '@/components/InfiniteFilterDropdown';
+import { useRoutesInfinite } from '@/hooks/queries/use-routes';
+import { useTripsInfinite } from '@/hooks/queries/use-trips';
 
-const CORRIDOR_OPTIONS = ['All Corridors', 'Red Line', 'Orange Line', 'Blue Line'];
-const DIRECTION_OPTIONS = ['Both Directions', 'Inbound', 'Outbound'];
+const ROUTE_LOAD_MORE_SENTINEL = '__LOAD_MORE_ROUTES__';
+const TRIP_LOAD_MORE_SENTINEL = '__LOAD_MORE_TRIPS__';
+
+const PAGE_SIZE = 20;
 
 const VehicleFilter = () => {
-  const corridorAnchor = useComboboxAnchor();
-  const directionAnchor = useComboboxAnchor();
+  const routeLoadMoreRef = useRef<HTMLDivElement>(null);
+  const tripLoadMoreRef = useRef<HTMLDivElement>(null);
+  const [routeSearchValue, setRouteSearchValue] = useState('');
+  const [tripSearchValue, setTripSearchValue] = useState('');
+
+  const {
+    routes,
+    fetchNextPage: fetchNextRoutePage,
+    hasNextPage: hasNextRoutePage,
+    isFetchingNextPage: isFetchingNextRoutePage,
+    isLoading: isRoutesLoading,
+  } = useRoutesInfinite(PAGE_SIZE);
+
+  const {
+    trips,
+    fetchNextPage: fetchNextTripPage,
+    hasNextPage: hasNextTripPage,
+    isFetchingNextPage: isFetchingNextTripPage,
+    isLoading: isTripsLoading,
+  } = useTripsInfinite(PAGE_SIZE);
+
+  const routeOptions = useMemo(
+    () => routes.map((r) => r.attributes.long_name),
+    [routes],
+  );
+
+  const tripOptions = useMemo(
+    () =>
+      trips.map(
+        (t) =>
+          t.attributes.headsign ||
+          t.attributes.name ||
+          t.id,
+      ),
+    [trips],
+  );
+
+  const filteredRouteItems = useMemo(() => {
+    const q = routeSearchValue.trim().toLowerCase();
+    const filtered = q
+      ? routeOptions.filter((label) =>
+          label.toLowerCase().includes(q),
+        )
+      : routeOptions;
+    if (hasNextRoutePage) return [...filtered, ROUTE_LOAD_MORE_SENTINEL];
+    return filtered;
+  }, [routeOptions, routeSearchValue, hasNextRoutePage]);
+
+  const filteredTripItems = useMemo(() => {
+    const q = tripSearchValue.trim().toLowerCase();
+    const filtered = q
+      ? tripOptions.filter((label) =>
+          label.toLowerCase().includes(q),
+        )
+      : tripOptions;
+    if (hasNextTripPage) return [...filtered, TRIP_LOAD_MORE_SENTINEL];
+    return filtered;
+  }, [tripOptions, tripSearchValue, hasNextTripPage]);
+
+  // Saat search tidak menemukan hasil di data yang sudah dimuat, fetch halaman berikutnya
+  useEffect(() => {
+    if (
+      routeSearchValue.trim() &&
+      filteredRouteItems.filter((i) => i !== ROUTE_LOAD_MORE_SENTINEL)
+        .length === 0 &&
+      hasNextRoutePage &&
+      !isFetchingNextRoutePage
+    ) {
+      fetchNextRoutePage();
+    }
+  }, [
+    routeSearchValue,
+    filteredRouteItems,
+    hasNextRoutePage,
+    isFetchingNextRoutePage,
+    fetchNextRoutePage,
+  ]);
+
+  useEffect(() => {
+    if (
+      tripSearchValue.trim() &&
+      filteredTripItems.filter((i) => i !== TRIP_LOAD_MORE_SENTINEL)
+        .length === 0 &&
+      hasNextTripPage &&
+      !isFetchingNextTripPage
+    ) {
+      fetchNextTripPage();
+    }
+  }, [
+    tripSearchValue,
+    filteredTripItems,
+    hasNextTripPage,
+    isFetchingNextTripPage,
+    fetchNextTripPage,
+  ]);
 
   return (
     <Card>
       <CardContent>
         <div className="flex flex-wrap items-end gap-4">
+          <InfiniteFilterDropdown
+            label="Rute"
+            placeholder="Cari rute…"
+            options={routeOptions}
+            filteredItems={filteredRouteItems}
+            searchValue={routeSearchValue}
+            onSearchChange={setRouteSearchValue}
+            hasNextPage={hasNextRoutePage}
+            isFetchingNextPage={isFetchingNextRoutePage}
+            isLoading={isRoutesLoading}
+            loadMoreRef={routeLoadMoreRef}
+            sentinelValue={ROUTE_LOAD_MORE_SENTINEL}
+            onLoadMore={fetchNextRoutePage}
+          />
 
-          {/* Route Corridor (multiple) */}
-          <Field className="min-w-[180px] flex-1 basis-40">
-            <FieldLabel
-              className={cn(
-                'text-lg font-bold uppercase tracking-wide',
-                'text-primary'
-              )}
-            >
-              Route Corridor
-            </FieldLabel>
-            <Combobox
-              multiple
-              autoHighlight
-              items={CORRIDOR_OPTIONS}
-              defaultValue={[]}
-            >
-              <ComboboxChips
-                ref={corridorAnchor}
-                className="min-h-9 w-full bg-muted/50"
-              >
-                <ComboboxValue>
-                  {(values: string[]) => (
-                    <>
-                      {values.map((value) => (
-                        <ComboboxChip key={value}>{value}</ComboboxChip>
-                      ))}
-                      <ComboboxChipsInput placeholder="All Corridors" />
-                    </>
-                  )}
-                </ComboboxValue>
-              </ComboboxChips>
-              <ComboboxContent anchor={corridorAnchor}>
-                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                <ComboboxList>
-                  {(item) => (
-                    <ComboboxItem key={item} value={item}>
-                      {item}
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </Field>
+          <InfiniteFilterDropdown
+            label="Trip"
+            placeholder="Cari trip…"
+            options={tripOptions}
+            filteredItems={filteredTripItems}
+            searchValue={tripSearchValue}
+            onSearchChange={setTripSearchValue}
+            hasNextPage={hasNextTripPage}
+            isFetchingNextPage={isFetchingNextTripPage}
+            isLoading={isTripsLoading}
+            loadMoreRef={tripLoadMoreRef}
+            sentinelValue={TRIP_LOAD_MORE_SENTINEL}
+            onLoadMore={fetchNextTripPage}
+          />
 
-          {/* Trip Direction (multiple) */}
-          <Field className="min-w-[180px] flex-1 basis-40">
-            <FieldLabel
-              className={cn(
-                'text-lg font-bold uppercase tracking-wide',
-                'text-primary'
-              )}
-            >
-              Trip Direction
-            </FieldLabel>
-            <Combobox
-              multiple
-              autoHighlight
-              items={DIRECTION_OPTIONS}
-              defaultValue={[]}
-            >
-              <ComboboxChips
-                ref={directionAnchor}
-                className="min-h-9 w-full bg-muted/50"
-              >
-                <ComboboxValue>
-                  {(values: string[]) => (
-                    <>
-                      {values.map((value) => (
-                        <ComboboxChip key={value}>{value}</ComboboxChip>
-                      ))}
-                      <ComboboxChipsInput placeholder="Both Directions" />
-                    </>
-                  )}
-                </ComboboxValue>
-              </ComboboxChips>
-              <ComboboxContent anchor={directionAnchor}>
-                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                <ComboboxList>
-                  {(item) => (
-                    <ComboboxItem key={item} value={item}>
-                      {item}
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </Field>
-
-          {/* Action buttons */}
           <div className="flex shrink-0 items-center gap-2">
             <Button size="default" className="gap-2">
               <Filter className="size-4" />
-              Apply Filters
+              Terapkan Filter
             </Button>
             <Button variant="secondary" size="default">
               Reset
