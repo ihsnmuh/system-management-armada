@@ -163,6 +163,6 @@
     @apply bg-background text-foreground;
   }
   .layout {
-    @apply flex flex-col p-4 mx-auto w-full max-w-7xl min-h-screen bg-background text-foreground;
+    @apply flex flex-col p-4 mx-auto w-full max-w-7xl bg-background text-foreground;
   }
 }
