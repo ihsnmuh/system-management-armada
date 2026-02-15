@@ -4,9 +4,15 @@ export interface ApiResponse<T> {
   links?: PaginationLinks;
 }
 
-export interface ApiListResponse<T> {
+export interface ApiListResponse<T, I = T> {
   data: T[];
+  included?: I[];
+  jsonapi?: JsonApi;
   links?: PaginationLinks;
+}
+
+export interface JsonApi {
+  version: string;
 }
 
 export interface PaginationLinks {
@@ -20,4 +26,8 @@ export interface PaginationLinks {
 export interface PaginationParams {
   limit?: number;
   offset?: number;
+}
+
+export interface FilterParams {
+  include?: string;
 }

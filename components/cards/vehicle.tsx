@@ -1,8 +1,13 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
-import { Vehicle } from '@/types/api';
+import { Vehicle, Route as RouteType } from '@/types/api';
 import { Badge } from '../ui/badge';
 import { VehicleCurrentStatus, VehicleOccupancyStatus } from '@/types/api/vehicles';
+
+export type VehicleWithRoute = Vehicle & {
+    routeDetail: RouteType | null;
+};
+
 import {
     MapPin,
     Route,
@@ -11,6 +16,7 @@ import {
     PersonStanding,
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { TypographyH3 } from '../Typography';
 
 const STATUS_CONFIG = {
     [VehicleCurrentStatus.IN_TRANSIT_TO]: {
@@ -54,8 +60,8 @@ const DEFAULT_STATUS = {
     dot: 'bg-gray-400',
 };
 
-const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
-    const { attributes, relationships } = vehicle;
+const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
+    const { attributes, relationships, routeDetail } = vehicle;
 
     const status = STATUS_CONFIG[attributes.current_status as VehicleCurrentStatus] ?? DEFAULT_STATUS;
 
@@ -89,9 +95,9 @@ const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
         <Card className="group hover:shadow-md transition-all duration-200 hover:border-primary/20">
             <CardHeader className="pb-0">
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xl font-bold text-primary tracking-tight">
+                    <TypographyH3 className="text-primary tracking-tight font-bold">
                         {attributes.label}
-                    </h3>
+                    </TypographyH3>
                     <Badge variant="outline" className={`${status.badge} shrink-0 flex justify-center items-center`}>
                         <span className="relative mr-1.5 flex h-2 w-2">
                             <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${status.dot}`} />
@@ -102,19 +108,24 @@ const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
                 </div>
 
                 {relationships.route?.data?.id && (
-                    <div className="flex items-center justify-between gap-1.5 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                            <Route className="h-3.5 w-3.5 shrink-0" />
-                            <span className="text-muted-foreground">Route</span>
-                        </div>
-                        <span className="truncate">{relationships.route.data.id}</span>
+                    <div className="flex items-start gap-1.5 text-sm text-muted-foreground">
+                        <Route className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                        <span className="wrap-break-words font-semibold">
+                            <Badge
+                                className="text-white border-none"
+                                style={{ backgroundColor: `#${routeDetail?.attributes.color ?? '000000'}` }}
+                            >
+                                {routeDetail?.attributes.short_name ?? relationships.route.data.id}
+                            </Badge>
+                            {routeDetail?.attributes.long_name ? ` ${routeDetail.attributes.long_name}` : ''}
+                        </span>
                     </div>
                 )}
             </CardHeader>
 
             <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-2 bg-[#F5F7F8] p-2 rounded-md">
-                    {relationships.stop?.data?.id && (
+                    {/* {relationships.stop?.data?.id && (
                         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                                 <MapPin className="h-3.5 w-3.5 shrink-0" />
@@ -131,7 +142,7 @@ const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
                             </div>
                             <span className="truncate text-primary font-medium">{relationships.trip.data.id}</span>
                         </div>
-                    )}
+                    )} */}
 
                     {attributes.latitude && (
                         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">

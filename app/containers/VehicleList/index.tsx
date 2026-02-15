@@ -4,13 +4,27 @@ import { useVehicles } from '@/hooks/queries/use-vehicles';
 import VehicleCard from '@/components/cards/vehicle';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 const ContainerVehicleList = () => {
 
     const limit = 8;
-    const { data, isLoading, isFetching } = useVehicles({ limit, offset: 0 });
+    const [includeVehicles, setIncludeVehicles] = useState<string[]>(['route']);
+    const { data, isLoading, isFetching } = useVehicles({ limit, offset: 0, include: includeVehicles.join(',') });
 
     const isRefetching = isFetching && !isLoading;
+
+    const vehicles = data?.data.map(vehicle => {
+        const routeId = vehicle.relationships.route.data?.id;
+        const routeDetail = data?.included?.find(
+            item => item.type === 'route' && item.id === routeId
+        );
+
+        return {
+            ...vehicle,
+            routeDetail: routeDetail ?? null,
+        };
+    });
 
     return (
         <div className="layout relative">
@@ -25,7 +39,7 @@ const ContainerVehicleList = () => {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {!isLoading && data?.data.map((vehicle) => (
+                {!isLoading && vehicles?.map((vehicle) => (
                     <VehicleCard key={vehicle.id} vehicle={vehicle} />  
                 ))}
 
