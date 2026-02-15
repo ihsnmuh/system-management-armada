@@ -2,30 +2,11 @@
 
 import { useVehicles } from '@/hooks/queries/use-vehicles';
 import VehicleCard from '@/components/cards/vehicle';
+import ListPagination from '@/components/ListPagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { cn, generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
+import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-
-const LIMIT_OPTIONS = [10, 30, 50, 100] as const;
 
 const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
@@ -101,91 +82,19 @@ const ContainerVehicleList = () => {
           ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border p-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-9 w-64 bg-gray-200 rounded-md" />
-            <Skeleton className="h-9 w-72 bg-gray-200 rounded-md" />
-          </>
-        ) : (
-          <>
-            <Field orientation="horizontal" className="w-fit text-primary">
-              <FieldLabel htmlFor="select-rows-per-page">
-                {totalItems !== null
-                  ? `Menampilkan ${startItem} - ${endItem} dari ${totalItems} data`
-                  : `Menampilkan ${startItem} - ${endItem} data`}
-              </FieldLabel>
-              <Select
-                value={limitPerPage.toString()}
-                onValueChange={handleLimitChange}
-              >
-                <SelectTrigger className="w-20" id="select-rows-per-page">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectGroup>
-                    {LIMIT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt.toString()}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Pagination className="w-fit mx-0 flex items-center justify-center">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => hasPrevPage && setCurrentPage((p) => p - 1)}
-                    className={cn(
-                      'cursor-pointer',
-                      !hasPrevPage && 'pointer-events-none opacity-50',
-                    )}
-                  />
-                </PaginationItem>
-
-                {pageNumbers ? (
-                  pageNumbers.map((page, idx) =>
-                    page === 'ellipsis' ? (
-                      <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          className="cursor-pointer"
-                          isActive={page === currentPage}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ),
-                  )
-                ) : (
-                  <PaginationItem>
-                    <PaginationLink isActive className="cursor-pointer">
-                      {currentPage + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => hasNextPage && setCurrentPage((p) => p + 1)}
-                    className={cn(
-                      'cursor-pointer',
-                      !hasNextPage && 'pointer-events-none opacity-50',
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </>
-        )}
-      </div>
+      <ListPagination
+        isLoading={isLoading}
+        totalItems={totalItems}
+        startItem={startItem}
+        endItem={endItem}
+        limitPerPage={limitPerPage}
+        onLimitChange={handleLimitChange}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        hasPrevPage={hasPrevPage}
+        hasNextPage={hasNextPage}
+        pageNumbers={pageNumbers}
+      />
     </div>
   );
 };
