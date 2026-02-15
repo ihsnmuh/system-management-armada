@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import VehicleFilter from '@/components/VehicleFilter';
 
 const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
@@ -57,7 +58,7 @@ const ContainerVehicleList = () => {
 
   return (
     <div className="layout relative flex flex-col gap-4">
-      {isRefetching && (
+      {/* {isRefetching && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-lg">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -66,7 +67,9 @@ const ContainerVehicleList = () => {
             </p>
           </div>
         </div>
-      )}
+      )} */}
+
+      <VehicleFilter />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&
