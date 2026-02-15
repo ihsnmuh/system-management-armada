@@ -7,24 +7,24 @@ export interface Vehicle {
 }
 
 export interface VehicleAttributes {
-  bearing: number;
+  bearing: number | null;
   carriages: VehicleCarriage[];
-  current_status: string;
-  current_stop_sequence: number;
-  direction_id: number;
+  current_status: VehicleCurrentStatus;
+  current_stop_sequence: number | null;
+  direction_id: number | null;
   label: string;
   latitude: number;
   longitude: number;
-  occupancy_status: VehicleOccupancyStatus;
+  occupancy_status: VehicleOccupancyStatus | null;
   revenue: string;
-  speed: unknown;
+  speed: number | null;
   updated_at: string;
 }
 
 export interface VehicleCarriage {
   label: string;
   occupancy_status: string;
-  occupancy_percentage: unknown;
+  occupancy_percentage: number | null;
 }
 
 export interface VehicleLinks {
@@ -42,7 +42,7 @@ export interface VehicleRoute {
 }
 
 export interface VehicleStop {
-  data: RelationshipData;
+  data: RelationshipData | null;
 }
 
 export interface VehicleTrip {
