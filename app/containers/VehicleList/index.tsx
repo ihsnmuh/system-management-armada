@@ -12,7 +12,7 @@ import VehicleFilter from '@/components/VehicleFilter';
 const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
-  const [includeVehicles] = useState<string[]>(['route']);
+  const [includeVehicles] = useState<string[]>(['route', 'trip']);
   const [appliedRouteIds, setAppliedRouteIds] = useState<string[]>([]);
   const [appliedTripIds, setAppliedTripIds] = useState<string[]>([]);
 

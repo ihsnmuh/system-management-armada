@@ -293,8 +293,8 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
       <CardContent>
         <div className="flex flex-wrap items-end gap-4">
           <InfiniteFilterDropdown
-            label="Tipe"
-            placeholder="Cari tipe…"
+            label="Tipe Kendaraan"
+            placeholder="Cari tipe kendaraan..."
             options={ROUTE_TYPE_OPTIONS}
             filteredItems={filteredTypeItems}
             searchValue={typeSearchValue}
@@ -311,7 +311,7 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
 
           <InfiniteFilterDropdown
             label="Rute"
-            placeholder="Cari rute…"
+            placeholder="Cari rute..."
             options={routeOptions}
             filteredItems={filteredRouteItems}
             searchValue={routeSearchValue}
@@ -329,7 +329,7 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
 
           <InfiniteFilterDropdown
             label="Trip"
-            placeholder="Cari trip…"
+            placeholder="Cari trip..."
             options={tripOptions}
             filteredItems={filteredTripItems}
             searchValue={tripSearchValue}
