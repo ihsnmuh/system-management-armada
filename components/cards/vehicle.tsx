@@ -31,7 +31,13 @@ const OCCUPANCY_STATUS_CONFIG = {
   },
 } as const;
 
-const VehicleCard = ({ vehicle, onViewDetail }: { vehicle: VehicleWithRoute, onViewDetail: (id: string) => void }) => {
+const VehicleCard = ({
+  vehicle,
+  onViewDetail,
+}: {
+  vehicle: VehicleWithRoute;
+  onViewDetail: (id: string) => void;
+}) => {
   const { attributes, relationships, routeDetail } = vehicle;
 
   const updatedAtTimeOnly = useMemo(() => {
@@ -113,7 +119,9 @@ const VehicleCard = ({ vehicle, onViewDetail }: { vehicle: VehicleWithRoute, onV
           {updatedAtTimeOnly && (
             <div className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              <span className="text-xs text-muted-foreground text-center">last updated at {updatedAtTimeOnly}</span>
+              <span className="text-xs text-muted-foreground text-center">
+                last updated at {updatedAtTimeOnly}
+              </span>
             </div>
           )}
 
@@ -138,7 +146,12 @@ const VehicleCard = ({ vehicle, onViewDetail }: { vehicle: VehicleWithRoute, onV
       </CardContent>
 
       <CardFooter className="flex justify-end">
-        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => onViewDetail(vehicle.id)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="cursor-pointer"
+          onClick={() => onViewDetail(vehicle.id)}
+        >
           <Eye className="h-4 w-4" />
           Lihat Detail
         </Button>

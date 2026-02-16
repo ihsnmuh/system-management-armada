@@ -5,13 +5,12 @@ import VehicleCard from '@/components/cards/vehicle';
 import ListPagination from '@/components/ListPagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import VehicleFilter from '@/components/VehicleFilter';
 import { DialogDetail } from '@/components/DialogDetail';
 import { toast } from 'sonner';
 
-const ContainerVehicleList = () => {  
+const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
   const [includeVehicles] = useState<string[]>(['route', 'trip']);
@@ -105,9 +104,12 @@ const ContainerVehicleList = () => {
   useEffect(() => {
     if (isRefetching) {
       if (!refetchToastId.current) {
-        refetchToastId.current = toast.loading('Memperbarui data kendaraan...', {
-          position: 'top-center',
-        });
+        refetchToastId.current = toast.loading(
+          'Memperbarui data kendaraan...',
+          {
+            position: 'top-center',
+          },
+        );
       }
     } else if (refetchToastId.current) {
       toast.success('Data kendaraan berhasil diperbarui.', {
@@ -130,7 +132,11 @@ const ContainerVehicleList = () => {
           vehicles &&
           vehicles.length > 0 &&
           vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} onViewDetail={handleViewDetail} />
+            <VehicleCard
+              key={vehicle.id}
+              vehicle={vehicle}
+              onViewDetail={handleViewDetail}
+            />
           ))}
 
         {!isLoading && (!vehicles || vehicles.length === 0) && (

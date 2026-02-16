@@ -42,7 +42,10 @@ const ROUTE_TYPE_OPTIONS: FilterOption[] = [
   { value: '4', label: 'Ferry', searchText: 'ferry' },
 ].map((opt) => {
   const typeNum = Number(opt.value);
-  const colors = ROUTE_TYPE_COLOR[typeNum] ?? { bg: '#6b7280', text: '#ffffff' };
+  const colors = ROUTE_TYPE_COLOR[typeNum] ?? {
+    bg: '#6b7280',
+    text: '#ffffff',
+  };
   return {
     ...opt,
     label: (
@@ -74,8 +77,7 @@ function TripOptionLabel({
   trip: Trip;
   routeLongName: string;
 }) {
-  const main =
-    trip.attributes.headsign ?? trip.attributes.name ?? trip.id;
+  const main = trip.attributes.headsign ?? trip.attributes.name ?? trip.id;
   const route = routeLongName.trim();
   const line = route
     ? main === route
@@ -84,9 +86,7 @@ function TripOptionLabel({
     : main === trip.id
       ? trip.id
       : `${main} (${trip.id})`;
-  return (
-    <span className="block min-w-0 truncate text-left">{line}</span>
-  );
+  return <span className="block min-w-0 truncate text-left">{line}</span>;
 }
 
 export interface VehicleFilterProps {
@@ -184,7 +184,9 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
       trips.map((t) => {
         const routeId = t.relationships?.route?.data?.id;
         const routeLongName =
-          (routeId && routes.find((r) => r.id === routeId)?.attributes.long_name) ?? '';
+          (routeId &&
+            routes.find((r) => r.id === routeId)?.attributes.long_name) ??
+          '';
         const headsign = t.attributes.headsign ?? t.attributes.name ?? t.id;
         const line2 =
           t.attributes.name ??
@@ -192,12 +194,7 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
         const searchText = [headsign, line2, t.id].join(' ').toLowerCase();
         return {
           value: t.id,
-          label: (
-            <TripOptionLabel
-              trip={t}
-              routeLongName={routeLongName}
-            />
-          ),
+          label: <TripOptionLabel trip={t} routeLongName={routeLongName} />,
           searchText,
         };
       }),
@@ -217,7 +214,9 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     const q = routeSearchValue.trim().toLowerCase();
     const filtered = q
       ? routeOptions
-          .filter((o) => (o.searchText ?? String(o.label)).toLowerCase().includes(q))
+          .filter((o) =>
+            (o.searchText ?? String(o.label)).toLowerCase().includes(q),
+          )
           .map((o) => o.value)
       : routeOptions.map((o) => o.value);
     if (hasNextRoutePage) return [...filtered, ROUTE_LOAD_MORE_SENTINEL];
@@ -228,7 +227,9 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     const q = tripSearchValue.trim().toLowerCase();
     return q
       ? tripOptions
-          .filter((o) => (o.searchText ?? String(o.label)).toLowerCase().includes(q))
+          .filter((o) =>
+            (o.searchText ?? String(o.label)).toLowerCase().includes(q),
+          )
           .map((o) => o.value)
       : tripOptions.map((o) => o.value);
   }, [tripOptions, tripSearchValue]);
