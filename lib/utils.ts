@@ -42,3 +42,16 @@ export function generatePageNumbers(
 
   return pages;
 }
+
+export function bearingToDirection(bearing: number | null): string {
+  if (bearing === null) return '—';
+  const d = bearing % 360;
+  if (d < 22.5 || d >= 337.5) return `${Math.round(bearing)}° (N)`;
+  if (d < 67.5) return `${Math.round(bearing)}° (NE)`;
+  if (d < 112.5) return `${Math.round(bearing)}° (E)`;
+  if (d < 157.5) return `${Math.round(bearing)}° (SE)`;
+  if (d < 202.5) return `${Math.round(bearing)}° (S)`;
+  if (d < 247.5) return `${Math.round(bearing)}° (SW)`;
+  if (d < 292.5) return `${Math.round(bearing)}° (W)`;
+  return `${Math.round(bearing)}° (NW)`;
+}

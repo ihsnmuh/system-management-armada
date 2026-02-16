@@ -50,6 +50,7 @@ interface LeafletMapProps {
   className?: string;
   tileUrl?: string;
   tileAttribution?: string;
+  colorRoute?: string;
 }
 
 const DEFAULT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -65,6 +66,7 @@ function LeafletMap({
   className,
   tileUrl = DEFAULT_TILE_URL,
   tileAttribution = DEFAULT_TILE_ATTRIBUTION,
+  colorRoute,
 }: LeafletMapProps) {
   useEffect(() => {
     // Fix icon marker Leaflet yang sering hilang di bundler (Next/Webpack/Turbopack).
@@ -142,7 +144,7 @@ function LeafletMap({
           </Marker>
         ))}
         {resolvedShapeCoordinates.length > 0 && (
-          <Polyline pathOptions={{ color: 'blue' }} positions={resolvedShapeCoordinates} />
+          <Polyline pathOptions={{ color: colorRoute ?? '#000000' }} positions={resolvedShapeCoordinates} />
         )}
         {resolvedSchedulePoints.map((point, index) => (
           <CircleMarker
