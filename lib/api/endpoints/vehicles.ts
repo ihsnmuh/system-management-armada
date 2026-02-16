@@ -3,6 +3,7 @@ import type {
   Vehicle,
   Route,
   Trip,
+  Stop,
   ApiListResponse,
   ApiDetailResponse,
   PaginationParams,
@@ -68,9 +69,7 @@ export const vehicleApi = {
       `${ENDPOINTS.BASE}${buildQuery(params)}`,
     ),
   getById: (id: string, params?: VehicleDetailParams) =>
-    apiClient<
-      ApiDetailResponse<Vehicle, Route | Trip | Record<string, unknown>>
-    >(
+    apiClient<ApiDetailResponse<Vehicle, Route | Trip | Stop | Record<string, unknown>>>(
       `${ENDPOINTS.BASE}/${id}${buildDetailQuery(
         params ?? { include: VEHICLE_DETAIL_INCLUDE },
       )}`,

@@ -23,6 +23,7 @@ export function useVehicleById(id: string) {
     queryKey: vehicleKeys.getById(id),
     queryFn: () => vehicleApi.getById(id),
     enabled: !!id,
+    refetchInterval: 0.1 * 60 * 1000, // refetch setiap 0.1 menit
   });
 }
 

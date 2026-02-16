@@ -1,252 +1,473 @@
 'use client';
 
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
-import type { Vehicle } from '@/types/api/vehicles';
-import { VehicleCurrentStatus } from '@/types/api/vehicles';
-import { Badge } from '@/components/ui/badge';
+import { VehicleCurrentStatus, VehicleOccupancyStatus } from '@/types/api/vehicles';
 import { Button } from '@/components/ui/button';
-import { Bus, CheckCircle2, Clock, History, Phone, RefreshCw } from 'lucide-react';
-
-const STATUS_CONFIG: Record<
-  VehicleCurrentStatus,
-  { label: string; badgeClass: string }
-> = {
-  [VehicleCurrentStatus.IN_TRANSIT_TO]: {
-    label: 'IN TRANSIT',
-    badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
-  },
-  [VehicleCurrentStatus.STOPPED_AT]: {
-    label: 'STOPPED',
-    badgeClass: 'bg-amber-100 text-amber-800 border-amber-200',
-  },
-  [VehicleCurrentStatus.INCOMING_AT]: {
-    label: 'AT TERMINAL',
-    badgeClass: 'bg-blue-100 text-blue-800 border-amber-200',
-  },
-};
+import {
+    Bus,
+    CheckCircle2,
+    Clock,
+    MapPin,
+    RefreshCw,
+    Route,
+    Ship,
+    Train,
+} from 'lucide-react';
+import BadgeCustom from './BadgeCustom';
+import type {
+    ApiDetailResponse,
+    Route as RouteType,
+    Stop,
+    Trip,
+    Vehicle,
+} from '@/types/api';
 
 function bearingToDirection(bearing: number | null): string {
-  if (bearing === null) return '—';
-  const d = bearing % 360;
-  if (d < 22.5 || d >= 337.5) return `${Math.round(bearing)}° (N)`;
-  if (d < 67.5) return `${Math.round(bearing)}° (NE)`;
-  if (d < 112.5) return `${Math.round(bearing)}° (E)`;
-  if (d < 157.5) return `${Math.round(bearing)}° (SE)`;
-  if (d < 202.5) return `${Math.round(bearing)}° (S)`;
-  if (d < 247.5) return `${Math.round(bearing)}° (SW)`;
-  if (d < 292.5) return `${Math.round(bearing)}° (W)`;
-  return `${Math.round(bearing)}° (NW)`;
+    if (bearing === null) return '—';
+    const d = bearing % 360;
+    if (d < 22.5 || d >= 337.5) return `${Math.round(bearing)}° (N)`;
+    if (d < 67.5) return `${Math.round(bearing)}° (NE)`;
+    if (d < 112.5) return `${Math.round(bearing)}° (E)`;
+    if (d < 157.5) return `${Math.round(bearing)}° (SE)`;
+    if (d < 202.5) return `${Math.round(bearing)}° (S)`;
+    if (d < 247.5) return `${Math.round(bearing)}° (SW)`;
+    if (d < 292.5) return `${Math.round(bearing)}° (W)`;
+    return `${Math.round(bearing)}° (NW)`;
+}
+
+function occupancyLabel(status: VehicleOccupancyStatus | null): string {
+    if (!status) return '—';
+    const labels: Record<VehicleOccupancyStatus, string> = {
+        [VehicleOccupancyStatus.MANY_SEATS_AVAILABLE]: 'Banyak kursi tersedia',
+        [VehicleOccupancyStatus.FEW_SEATS_AVAILABLE]: 'Sedikit kursi tersedia',
+        [VehicleOccupancyStatus.FULL]: 'Penuh',
+        [VehicleOccupancyStatus.NO_DATA_AVAILABLE]: 'Data tidak tersedia',
+        [VehicleOccupancyStatus.UNKNOWN]: 'Tidak diketahui',
+    };
+    return labels[status] ?? '—';
 }
 
 interface DialogDetailProps {
-  isOpen: boolean;
-  onClose: () => void;
-  vehicleId?: string;
-  vehicleDetail?: Vehicle | null;
-  isLoading: boolean;
-  isFetching: boolean;
-  isRefetching: boolean;
-  onRefresh?: () => void;
+    isOpen: boolean;
+    onClose: () => void;
+    vehicleId?: string;
+    vehicleDetail?: ApiDetailResponse<
+        Vehicle,
+        RouteType | Trip | Stop | Record<string, unknown>
+    > | null;
+    isLoading: boolean;
+    isFetching: boolean;
+    isRefetching: boolean;
+    onRefresh?: () => void;
+}
+
+function DataRow({
+    label,
+    value,
+}: {
+    label: string;
+    value: React.ReactNode;
+}) {
+    return (
+        <div className="space-y-0.5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+            </p>
+            <p className="text-sm">{value ?? '—'}</p>
+        </div>
+    );
 }
 
 export function DialogDetail({
-  isOpen,
-  onClose,
-  vehicleDetail,
-  isLoading,
-  isFetching,
-  isRefetching,
-  onRefresh,
+    isOpen,
+    onClose,
+    vehicleDetail,
+    isLoading,
+    isFetching,
+    isRefetching,
+    onRefresh,
 }: DialogDetailProps) {
-  const isBusy = isLoading || isFetching || isRefetching;
+    const isBusy = isLoading || isFetching || isRefetching;
 
-  const statusInfo = vehicleDetail
-    ? STATUS_CONFIG[vehicleDetail.attributes.current_status] ?? {
-        label: 'UNKNOWN',
-        badgeClass: 'bg-gray-100 text-gray-700 border-gray-200',
-      }
-    : null;
+    const routeId = vehicleDetail?.data?.relationships?.route?.data?.id;
+    const tripId = vehicleDetail?.data?.relationships?.trip?.data?.id;
+    const stopId = vehicleDetail?.data?.relationships?.stop?.data?.id;
 
-  const updatedAt = vehicleDetail?.attributes?.updated_at;
-  const lastUpdatedFormatted = updatedAt
-    ? new Date(updatedAt).toLocaleTimeString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      }) + ' WIB'
-    : '—';
+    const included = vehicleDetail?.included ?? [];
+    const routeDetail = included.find(
+        (item): item is RouteType =>
+            item.type === 'route' && 'attributes' in item && item.id === routeId,
+    );
+    const tripDetail = included.find(
+        (item): item is Trip =>
+            item.type === 'trip' && 'attributes' in item && item.id === tripId,
+    );
+    const stopDetail = included.find(
+        (item): item is Stop =>
+            item.type === 'stop' && 'attributes' in item && item.id === stopId,
+    );
 
-  const speedKmh =
-    vehicleDetail?.attributes.speed != null
-      ? Math.round(vehicleDetail.attributes.speed * 3.6)
-      : null;
+    const attrs = vehicleDetail?.data?.attributes;
+    const routeType = routeDetail?.attributes?.type;
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl gap-0 p-0">
-        {/* Header */}
-        <DialogHeader className="flex flex-row items-start justify-between gap-4 border-b px-6 py-4 text-left">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <Bus className="size-5 text-blue-600" />
-              <DialogTitle className="text-lg font-semibold">
-                {vehicleDetail?.attributes?.label ?? (isBusy ? 'Memuat...' : '—')}
-              </DialogTitle>
-              {statusInfo && (
-                <Badge
-                  variant="outline"
-                  className={statusInfo.badgeClass + ' font-medium'}
-                >
-                  {statusInfo.label}
-                </Badge>
-              )}
-            </div>
-            {!isBusy && (
-              <div className="flex items-center gap-1.5 text-sm text-emerald-600">
-                <span className="size-2 rounded-full bg-emerald-500" />
-                Live Tracking Active
-              </div>
-            )}
-          </div>
-        </DialogHeader>
+    const updatedAt = attrs?.updated_at;
+    const lastUpdatedFormatted = updatedAt
+        ? new Date(updatedAt).toLocaleTimeString('id-ID', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+          }) + ' WIB'
+        : '—';
 
-        {/* Body: two columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-4">
-          {isBusy && (
-            <div className="col-span-full py-8 text-center text-muted-foreground text-sm">
-              Memuat detail kendaraan...
-            </div>
-          )}
-          {!isBusy && (
-            <>
-          {/* Left column — vehicle data */}
-          <div className="flex flex-col gap-4">
-            <div className="rounded-lg border bg-emerald-50/80 p-3 flex items-center gap-2">
-              <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
-              <span className="text-sm font-medium text-emerald-800">
-                Beroperasi Normal
-              </span>
-            </div>
+    const speedKmh =
+        attrs?.speed != null ? Math.round(attrs.speed * 3.6) : null;
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Latitude
-              </p>
-              <p className="text-sm font-mono">
-                {vehicleDetail?.attributes?.latitude ?? '—'}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Longitude
-              </p>
-              <p className="text-sm font-mono">
-                {vehicleDetail?.attributes?.longitude ?? '—'}
-              </p>
-            </div>
+    const directionId = attrs?.direction_id ?? tripDetail?.attributes?.direction_id;
+    const directionLabel =
+        directionId != null && routeDetail?.attributes?.direction_names?.length
+            ? routeDetail.attributes.direction_names[directionId]
+            : null;
 
-            <div className="space-y-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Route Data
-              </p>
-              <span className="text-sm text-blue-600 hover:underline cursor-pointer">
-                {vehicleDetail?.relationships?.route?.data?.id
-                  ? `Route ${vehicleDetail.relationships.route.data.id}`
-                  : '—'}
-              </span>
-            </div>
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent
+                className="sm:max-w-2xl gap-0 p-0"
+                closeOnClickOutside={false}
+            >
+                {/* Header */}
+                <DialogHeader className="flex flex-row items-start justify-between gap-4 border-b px-6 py-4 text-left">
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-2">
+                            {routeType === 0 || routeType === 1 || routeType === 2 ? (
+                                <span
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                                        routeType === 2
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-slate-600 text-white'
+                                    }`}
+                                >
+                                    <Train className="size-5" />
+                                </span>
+                            ) : routeType === 4 ? (
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-teal-500 text-white">
+                                    <Ship className="size-5" />
+                                </span>
+                            ) : (
+                                <span
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                                        routeType === 3
+                                            ? 'bg-amber-400 text-black'
+                                            : 'bg-teal-500 text-black'
+                                    }`}
+                                >
+                                    <Bus className="size-5" />
+                                </span>
+                            )}
+                            <DialogTitle className="text-lg font-semibold">
+                                {attrs?.label ?? (isBusy ? 'Memuat...' : '—')}
+                            </DialogTitle>
+                            <BadgeCustom
+                                currentStatus={
+                                    attrs?.current_status as VehicleCurrentStatus
+                                }
+                            />
+                        </div>
+                        {!isBusy && (
+                            <div className="flex items-center gap-1.5 text-sm text-emerald-600">
+                                <span className="size-2 rounded-full bg-emerald-500" />
+                                Live Tracking Active
+                            </div>
+                        )}
+                    </div>
+                </DialogHeader>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Trip ID
-                </p>
-                <p className="text-sm font-mono">
-                  {vehicleDetail?.relationships?.trip?.data?.id ?? '—'}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Speed
-                </p>
-                <p className="text-sm">
-                  {speedKmh != null ? `${speedKmh} km/h` : '—'}
-                </p>
-              </div>
-            </div>
+                {/* Body */}
+                <div className="max-h-[70vh] overflow-y-auto">
+                    {isBusy && (
+                        <div className="py-8 text-center text-muted-foreground text-sm">
+                            Memuat detail kendaraan...
+                        </div>
+                    )}
+                    {!isBusy && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-4">
+                            {/* Left column */}
+                            <div className="flex flex-col gap-4">
+                                {/* Informasi Kendaraan */}
+                                <div className="space-y-3">
+                                    <h3 className="text-sm font-semibold flex items-center gap-2">
+                                        <CheckCircle2 className="size-4 text-emerald-600" />
+                                        Informasi Kendaraan
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <DataRow label="Vehicle ID" value={vehicleDetail?.data?.id} />
+                                        <DataRow label="Label" value={attrs?.label} />
+                                        <DataRow
+                                            label="Occupancy"
+                                            value={occupancyLabel(
+                                                attrs?.occupancy_status ?? null,
+                                            )}
+                                        />
+                                        <DataRow label="Revenue" value={attrs?.revenue} />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <DataRow
+                                            label="Latitude"
+                                            value={attrs?.latitude}
+                                        />
+                                        <DataRow
+                                            label="Longitude"
+                                            value={attrs?.longitude}
+                                        />
+                                        <DataRow
+                                            label="Speed"
+                                            value={
+                                                speedKmh != null
+                                                    ? `${speedKmh} km/h`
+                                                    : '—'
+                                            }
+                                        />
+                                        <DataRow
+                                            label="Bearing"
+                                            value={bearingToDirection(
+                                                attrs?.bearing ?? null,
+                                            )}
+                                        />
+                                        <DataRow
+                                            label="Stop Sequence"
+                                            value={attrs?.current_stop_sequence}
+                                        />
+                                        <DataRow
+                                            label="Direction"
+                                            value={directionLabel ?? directionId}
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <Clock className="size-4 shrink-0" />
+                                        Terakhir diperbarui: {lastUpdatedFormatted}
+                                    </div>
+                                </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Bearing
-                </p>
-                <p className="text-sm">
-                  {bearingToDirection(vehicleDetail?.attributes?.bearing ?? null)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Sequence
-                </p>
-                <p className="text-sm">
-                  {vehicleDetail?.attributes?.current_stop_sequence ?? '—'}
-                </p>
-              </div>
-            </div>
+                                {/* Informasi Rute */}
+                                {routeDetail && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                                            <Route className="size-4" />
+                                            Informasi Rute
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-white border-none"
+                                                    style={{
+                                                        backgroundColor: `#${routeDetail.attributes.color || '000000'}`,
+                                                        color:
+                                                            routeDetail.attributes
+                                                                .text_color
+                                                                ? `#${routeDetail.attributes.text_color}`
+                                                                : undefined,
+                                                    }}
+                                                >
+                                                    {routeDetail.attributes.short_name}
+                                                </span>
+                                                <span className="text-sm font-medium">
+                                                    {routeDetail.attributes.long_name}
+                                                </span>
+                                            </div>
+                                            <DataRow
+                                                label="Deskripsi"
+                                                value={
+                                                    routeDetail.attributes
+                                                        .description
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Fare Class"
+                                                value={
+                                                    routeDetail.attributes
+                                                        .fare_class
+                                                }
+                                            />
+                                            <div className="space-y-0.5">
+                                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                                    Tujuan per Arah
+                                                </p>
+                                                <p className="text-sm">
+                                                    {routeDetail.attributes
+                                                        .direction_destinations
+                                                        ?.join(' ↔ ') ?? '—'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="size-4 shrink-0" />
-              {lastUpdatedFormatted}
-            </div>
-          </div>
+                                {/* Informasi Perjalanan (Trip) */}
+                                {tripDetail && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-sm font-semibold">
+                                            Informasi Perjalanan
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <DataRow
+                                                label="Trip ID"
+                                                value={tripDetail.id}
+                                            />
+                                            <DataRow
+                                                label="Headsign"
+                                                value={
+                                                    tripDetail.attributes
+                                                        .headsign
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Block ID"
+                                                value={
+                                                    tripDetail.attributes
+                                                        .block_id
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Wheelchair"
+                                                value={
+                                                    tripDetail.attributes
+                                                        .wheelchair_accessible === 1
+                                                        ? 'Ya'
+                                                        : tripDetail.attributes
+                                                              .wheelchair_accessible === 2
+                                                          ? 'Tidak'
+                                                          : '—'
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Sepeda Diizinkan"
+                                                value={
+                                                    tripDetail.attributes
+                                                        .bikes_allowed === 1
+                                                        ? 'Ya'
+                                                        : tripDetail.attributes
+                                                              .bikes_allowed === 2
+                                                          ? 'Tidak'
+                                                          : '—'
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
-          {/* Right column — map placeholder (kosong) */}
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Lokasi Real-Time
-            </p>
-            <div className="min-h-[240px] rounded-lg border border-dashed bg-muted/30" />
-          </div>
-            </>
-          )}
-        </div>
+                            {/* Right column */}
+                            <div className="flex flex-col gap-4">
+                                {/* Informasi Halte */}
+                                {stopDetail && (
+                                    <div className="space-y-3">
+                                        <h3 className="text-sm font-semibold flex items-center gap-2">
+                                            <MapPin className="size-4" />
+                                            Informasi Halte
+                                        </h3>
+                                        <div className="rounded-lg border p-3 space-y-2">
+                                            <DataRow
+                                                label="Nama Halte"
+                                                value={stopDetail.attributes.name}
+                                            />
+                                            <DataRow
+                                                label="Deskripsi"
+                                                value={
+                                                    stopDetail.attributes
+                                                        .description
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Jalan"
+                                                value={
+                                                    stopDetail.attributes
+                                                        .on_street
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Peron"
+                                                value={
+                                                    stopDetail.attributes
+                                                        .platform_name
+                                                }
+                                            />
+                                            <DataRow
+                                                label="Kotamadya"
+                                                value={
+                                                    stopDetail.attributes
+                                                        .municipality
+                                                }
+                                            />
+                                            <div className="grid grid-cols-2 gap-3 pt-1">
+                                                <DataRow
+                                                    label="Lat"
+                                                    value={
+                                                        stopDetail.attributes
+                                                            .latitude
+                                                    }
+                                                />
+                                                <DataRow
+                                                    label="Lon"
+                                                    value={
+                                                        stopDetail.attributes
+                                                            .longitude
+                                                    }
+                                                />
+                                            </div>
+                                            <DataRow
+                                                label="Wheelchair Boarding"
+                                                value={
+                                                    stopDetail.attributes
+                                                        .wheelchair_boarding === 1
+                                                        ? 'Ya'
+                                                        : stopDetail.attributes
+                                                              .wheelchair_boarding === 2
+                                                          ? 'Tidak'
+                                                          : '—'
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                )}
 
-        {/* Footer */}
-        <DialogFooter className="flex flex-row flex-wrap items-center justify-end gap-2 border-t px-6 py-4">
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <History className="size-4" />
-            Riwayat Perjalanan
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5">
-            <Phone className="size-4" />
-            Hubungi Driver
-          </Button>
-          <DialogClose asChild>
-            <Button variant="outline" size="sm">
-              Tutup
-            </Button>
-          </DialogClose>
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={onRefresh}
-            disabled={isRefetching}
-          >
-            <RefreshCw
-              className={`size-4 ${isRefetching ? 'animate-spin' : ''}`}
-            />
-            Refresh Data
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+                                {/* Map placeholder */}
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                        Lokasi Real-Time
+                                    </p>
+                                    <div className="min-h-[200px] rounded-lg border border-dashed bg-muted/30" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <DialogFooter className="flex flex-row flex-wrap items-center justify-end gap-2 border-t px-6 py-4">
+                    <DialogClose asChild>
+                        <Button variant="outline" size="sm">
+                            Tutup
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={onRefresh}
+                        disabled={isRefetching}
+                    >
+                        <RefreshCw
+                            className={`size-4 ${isRefetching ? 'animate-spin' : ''}`}
+                        />
+                        Refresh Data
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }
