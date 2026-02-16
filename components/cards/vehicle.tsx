@@ -57,31 +57,12 @@ const DEFAULT_STATUS = {
   dot: 'bg-gray-400',
 };
 
-const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
+const VehicleCard = ({ vehicle, onViewDetail }: { vehicle: VehicleWithRoute, onViewDetail: (id: string) => void }) => {
   const { attributes, relationships, routeDetail } = vehicle;
 
   const status =
     STATUS_CONFIG[attributes.current_status as VehicleCurrentStatus] ??
     DEFAULT_STATUS;
-
-//   const updatedAt = useMemo(() => {
-//     if (!attributes.updated_at) return null;
-
-//     const now = new Date();
-//     const date = new Date(attributes.updated_at);
-//     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-//     if (diffInSeconds < 60) return 'Just now';
-
-//     const diffInMinutes = Math.floor(diffInSeconds / 60);
-//     if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-
-//     const diffInHours = Math.floor(diffInMinutes / 60);
-//     if (diffInHours < 24) return `${diffInHours} hours ago`;
-
-//     const diffInDays = Math.floor(diffInHours / 24);
-//     return `${diffInDays} days ago`;
-//   }, [attributes.updated_at]);
 
   const updatedAtTimeOnly = useMemo(() => {
     if (!attributes.updated_at) return null;
@@ -200,9 +181,9 @@ const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
       </CardContent>
 
       <CardFooter className="flex justify-end">
-        <Button variant="outline" size="sm" className="cursor-pointer">
+        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => onViewDetail(vehicle.id)}>
           <Eye className="h-4 w-4" />
-          View
+          Lihat Detail
         </Button>
       </CardFooter>
     </Card>

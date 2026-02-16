@@ -18,6 +18,14 @@ export function useVehicles(params?: UseVehiclesParams) {
   });
 }
 
+export function useVehicleById(id: string) {
+  return useQuery({
+    queryKey: vehicleKeys.getById(id),
+    queryFn: () => vehicleApi.getById(id),
+    enabled: !!id,
+  });
+}
+
 const VEHICLES_FOR_TRIPS_LIMIT = 200;
 
 /**

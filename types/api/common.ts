@@ -11,6 +11,13 @@ export interface ApiListResponse<T, I = T> {
   links?: PaginationLinks;
 }
 
+/** Response untuk GET /resource/:id (single resource dengan optional included) */
+export interface ApiDetailResponse<T, I = unknown> {
+  data: T;
+  included?: I[];
+  jsonapi?: JsonApi;
+}
+
 export interface JsonApi {
   version: string;
 }

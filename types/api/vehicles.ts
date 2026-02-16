@@ -73,3 +73,8 @@ export interface VehicleFilterParams {
   filterRoute?: string;
   filterTrip?: string;
 }
+
+/** Params untuk GET /vehicles/:id (detail) — include relationship (route, trip, stop) */
+export interface VehicleDetailParams {
+  include?: string;
+}
