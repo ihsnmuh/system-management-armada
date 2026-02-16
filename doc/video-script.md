@@ -1,6 +1,6 @@
-## Script Video Penjelasan Project System Management Armada
+## Project System Management Armada
 
-Halo semuanya, di video ini saya akan menjelaskan secara singkat tentang project **System Management Armada** yang dibangun dengan teknologi modern berbasis **Next.js** dan **React**.
+**System Management Armada** yang dibangun dengan teknologi modern berbasis **Next.js** dan **React**.
 
 ### 1. Gambaran Umum Project
 
@@ -28,18 +28,179 @@ Untuk pengambilan data, project ini menerapkan pola **4 lapis**:
    - Hook ini menggunakan `useQuery` dari TanStack React Query.
    - Di sini didefinisikan `queryKey`, `queryFn`, dan `refetchInterval` untuk polling data berkala.
 
+   Contoh kodenya:
+
+   ```typescript
+   // hooks/queries/use-vehicles.ts
+   import { useQuery } from '@tanstack/react-query';
+   import { vehicleApi, vehicleKeys } from '@/lib/api/endpoints/vehicles';
+   import type { FilterParams, PaginationParams, VehicleDetailParams, VehicleFilterParams } from '@/types/api';
+
+   type UseVehiclesParams = PaginationParams & FilterParams & VehicleFilterParams;
+
+   export function useVehicles(params?: UseVehiclesParams) {
+     return useQuery({
+       queryKey: vehicleKeys.list(params),
+       queryFn: () => vehicleApi.getAll(params),
+       refetchInterval: 0.5 * 60 * 1000, // refetch setiap 0.5 menit
+     });
+   }
+
+   export function useVehicleById(id: string, params?: VehicleDetailParams) {
+     return useQuery({
+       queryKey: vehicleKeys.getById(id, params),
+       queryFn: () => vehicleApi.getById(id, params),
+       enabled: !!id,
+       refetchInterval: 0.1 * 60 * 1000, // refetch setiap 0.1 menit
+     });
+   }
+   ```
+
 2. **Endpoint Layer**
    - Di bawah folder `lib/api/endpoints/`, misalnya `vehicleApi`.
    - Di sini didefinisikan fungsi seperti `vehicleApi.getAll` dan `vehicleApi.getById` yang menyusun URL dan query parameter (limit, offset, filter route/trip, include relasi, dan sebagainya).
+
+   Contoh kodenya:
+
+   ```typescript
+   // lib/api/endpoints/vehicles.ts
+   import { apiClient } from '../client';
+   import type {
+     Vehicle,
+     Route,
+     Trip,
+     Stop,
+     ApiListResponse,
+     ApiDetailResponse,
+     PaginationParams,
+     FilterParams,
+     VehicleFilterParams,
+     VehicleDetailParams,
+   } from '@/types/api';
+
+   const ENDPOINTS = {
+     BASE: '/vehicles',
+   } as const;
+
+   type VehicleListParams = PaginationParams & FilterParams & VehicleFilterParams;
+
+   function buildQuery(params?: VehicleListParams): string {
+     if (!params) return '';
+
+     const searchParams = new URLSearchParams();
+
+     if (params.limit !== undefined) {
+       searchParams.set('page[limit]', String(params.limit));
+     }
+
+     if (params.offset !== undefined) {
+       searchParams.set('page[offset]', String(params.offset));
+     }
+
+     if (params.include !== undefined) {
+       searchParams.set('include', params.include);
+     }
+
+     if (params.filterRoute !== undefined) {
+       searchParams.set('filter[route]', params.filterRoute);
+     }
+
+     if (params.filterTrip !== undefined) {
+       searchParams.set('filter[trip]', params.filterTrip);
+     }
+
+     const query = searchParams.toString();
+     return query ? `?${query}` : '';
+   }
+
+   export const vehicleApi = {
+     getAll: (params?: VehicleListParams) =>
+       apiClient<ApiListResponse<Vehicle, Route>>(
+         `${ENDPOINTS.BASE}${buildQuery(params)}`,
+       ),
+     getById: (id: string, params?: VehicleDetailParams) =>
+       apiClient<
+         ApiDetailResponse<Vehicle, Route | Trip | Stop | Record<string, unknown>>
+       >(
+         `${ENDPOINTS.BASE}/${id}${buildDetailQuery(params)}`,
+       ),
+   };
+   ```
 
 3. **API Client**
    - Di `lib/api/client.ts` ada fungsi generik `apiClient<T>`.
    - Fungsi ini selalu mengirim request ke path `/api/mbta/...` dan menambahkan header `Content-Type: application/json`.
    - Jika response tidak `ok`, dia akan `throw new Error(res.statusText)`, dan jika sukses, hasilnya di-`return` sebagai `res.json()`.
 
+   Contoh kodenya:
+
+   ```typescript
+   // lib/api/client.ts
+   const API_URL = '/api/mbta';
+
+   export async function apiClient<T>(
+     endpoint: string,
+     options?: RequestInit,
+   ): Promise<T> {
+     const res = await fetch(`${API_URL}${endpoint}`, {
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       ...options,
+     });
+
+     if (!res.ok) throw new Error(res.statusText);
+
+     return res.json();
+   }
+   ```
+
 4. **API Proxy Next.js**
    - Di folder `app/api/mbta/[...path]/` ada route Next.js yang berfungsi sebagai **proxy** ke API MBTA.
    - Di sini API key dan base URL MBTA dibaca dari environment variable (`MBTA_API_URL` dan `MBTA_API_KEY`) sehingga key tidak pernah terekspos ke client.
+
+   Contoh kodenya:
+
+   ```typescript
+   // app/api/mbta/[...path]/route.ts
+   import { NextRequest, NextResponse } from 'next/server';
+
+   const MBTA_API_URL = process.env.MBTA_API_URL || '';
+   const MBTA_API_KEY = process.env.MBTA_API_KEY || '';
+
+   export async function GET(
+     request: NextRequest,
+     { params }: { params: Promise<{ path: string[] }> },
+   ) {
+     const { path } = await params;
+     const endpoint = `/${path.join('/')}`;
+     const searchParams = request.nextUrl.searchParams.toString();
+     const url = `${MBTA_API_URL}${endpoint}${searchParams ? `?${searchParams}` : ''}`;
+
+     try {
+       const res = await fetch(url, {
+         headers: {
+           'Content-Type': 'application/json',
+           ...(MBTA_API_KEY ? { 'x-api-key': MBTA_API_KEY } : {}),
+         },
+       });
+
+       const data = await res.json();
+
+       if (!res.ok) {
+         return NextResponse.json(data, { status: res.status });
+       }
+
+       return NextResponse.json(data);
+     } catch (error) {
+       console.error('MBTA API proxy error:', error);
+       return NextResponse.json(
+         { error: 'Failed to fetch from MBTA API' },
+         { status: 500 },
+       );
+     }
+   }
+   ```
 
 Secara singkat, alurnya seperti ini:
 
@@ -92,6 +253,43 @@ Logika dasarnya ada di `app/containers/VehicleList/index.tsx`:
 
 Nilai-nilai ini (`totalItems`, `startItem`, `endItem`, `currentPage`, `pageNumbers`, `hasPrevPage`, `hasNextPage`) dikirim ke komponen `ListPagination`.
 
+Contoh potongan kodenya:
+
+```typescript
+// app/containers/VehicleList/index.tsx
+const [limitPerPage, setLimitPerPage] = useState(12);
+const [currentPage, setCurrentPage] = useState(0);
+
+const { data, isLoading, isFetching } = useVehicles({
+  limit: limitPerPage,
+  offset: currentPage * limitPerPage,
+  include: includeVehicles.join(','),
+  ...(appliedRouteIds.length > 0 && {
+    filterRoute: appliedRouteIds.join(','),
+  }),
+  ...(appliedTripIds.length > 0 && {
+    filterTrip: appliedTripIds.join(','),
+  }),
+});
+
+const hasPrevPage = currentPage > 0;
+const hasNextPage = !!data?.links?.next;
+
+const lastOffset = data?.links?.last
+  ? parseOffsetFromUrl(data.links.last)
+  : null;
+
+const totalItems = lastOffset !== null ? lastOffset + limitPerPage : null;
+const totalPages =
+  lastOffset !== null ? Math.floor(lastOffset / limitPerPage) + 1 : null;
+
+const startItem = currentPage * limitPerPage + 1;
+const endItem = currentPage * limitPerPage + (data?.data?.length ?? 0);
+
+const pageNumbers =
+  totalPages !== null ? generatePageNumbers(currentPage, totalPages) : null;
+```
+
 #### b. Komponen UI Pagination
 
 Di `components/ListPagination.tsx`, UI pagination dibangun dengan:
@@ -112,6 +310,67 @@ Dengan pemisahan seperti ini:
 - **Container** mengurus logika bisnis dan perhitungan pagination.
 - **Komponen** mengurus tampilan dan interaksi UI.
 
+Contoh potongan kodenya:
+
+```typescript
+// components/ListPagination.tsx
+const ListPagination = ({
+  isLoading,
+  totalItems,
+  startItem,
+  endItem,
+  limitPerPage,
+  onLimitChange,
+  currentPage,
+  onPageChange,
+  hasPrevPage,
+  hasNextPage,
+  pageNumbers,
+}: ListPaginationProps) => (
+  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border p-4">
+    {isLoading ? (
+      // skeleton loading
+      <>
+        <Skeleton className="h-9 w-64 bg-gray-200 rounded-md" />
+        <Skeleton className="h-9 w-72 bg-gray-200 rounded-md" />
+      </>
+    ) : (
+      <>
+        <Field orientation="horizontal" className="w-fit text-primary">
+          <FieldLabel htmlFor="select-rows-per-page">
+            {totalItems !== null
+              ? `Menampilkan ${startItem} - ${endItem} dari ${totalItems} data`
+              : `Menampilkan ${startItem} - ${endItem} data`}
+          </FieldLabel>
+          <Select value={limitPerPage.toString()} onValueChange={onLimitChange}>
+            {/* opsi 12, 24, 48, 96 */}
+          </Select>
+        </Field>
+
+        <Pagination className="w-fit mx-0 flex items-center justify-center">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => hasPrevPage && onPageChange(currentPage - 1)}
+              />
+            </PaginationItem>
+
+            {/* render nomor halaman dan ellipsis */}
+            {/* ... */}
+
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => hasNextPage && onPageChange(currentPage + 1)}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </>
+    )}
+  </div>
+);
+```
+
 ### 5. Detail View dan Polling Data
 
 Selain list kendaraan, project ini juga menyediakan **detail kendaraan**:
@@ -122,6 +381,64 @@ Selain list kendaraan, project ini juga menyediakan **detail kendaraan**:
 - Saat data sedang di-refresh, aplikasi menampilkan toast menggunakan `sonner` dengan pesan dalam bahasa Indonesia seperti:
   - “Memperbarui data kendaraan...”
   - “Data kendaraan berhasil diperbarui.”
+
+Contoh potongan kodenya:
+
+```typescript
+// app/containers/VehicleList/index.tsx
+const [selectedVehicle, setSelectedVehicle] = useState({
+  id: '',
+  isOpen: false,
+});
+
+const {
+  data: vehicleDetail,
+  isLoading: isVehicleDetailLoading,
+  isFetching: isVehicleDetailFetching,
+  isRefetching: isVehicleDetailRefetching,
+  refetch: refetchVehicleDetail,
+} = useVehicleById(selectedVehicle.id, { include: 'route,trip,stop' });
+
+const handleViewDetail = (id: string) => {
+  setSelectedVehicle({
+    id,
+    isOpen: true,
+  });
+};
+
+useEffect(() => {
+  if (isRefetching) {
+    if (!refetchToastId.current) {
+      refetchToastId.current = toast.loading('Memperbarui data kendaraan...', {
+        position: 'top-center',
+      });
+    }
+  } else if (refetchToastId.current) {
+    toast.success('Data kendaraan berhasil diperbarui.', {
+      id: refetchToastId.current,
+      position: 'top-center',
+    });
+    refetchToastId.current = null;
+  }
+}, [isRefetching]);
+
+return (
+  <>
+    {/* ... list kendaraan ... */}
+
+    <DialogDetail
+      isOpen={selectedVehicle.isOpen}
+      onClose={() => setSelectedVehicle({ id: '', isOpen: false })}
+      vehicleId={selectedVehicle.id}
+      vehicleDetail={vehicleDetail}
+      isLoading={isVehicleDetailLoading}
+      isFetching={isVehicleDetailFetching}
+      isRefetching={isVehicleDetailRefetching}
+      onRefresh={() => refetchVehicleDetail()}
+    />
+  </>
+);
+```
 
 ### 6. Penutup (Closing Video)
 
