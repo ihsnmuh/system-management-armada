@@ -47,4 +47,3 @@ export interface ScheduleFilterParams {
 export interface ScheduleDetailParams {
   include?: string;
 }
-

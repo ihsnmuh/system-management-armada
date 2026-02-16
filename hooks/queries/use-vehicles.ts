@@ -38,7 +38,11 @@ export function useTripsFromVehicles(routeIds: string[] | undefined) {
   const filterRoute =
     routeIds && routeIds.length > 0 ? routeIds.join(',') : undefined;
   const { data, isLoading } = useQuery({
-    queryKey: [...vehicleKeys.all, 'trips-from-vehicles', { filterRoute }] as const,
+    queryKey: [
+      ...vehicleKeys.all,
+      'trips-from-vehicles',
+      { filterRoute },
+    ] as const,
     queryFn: () =>
       vehicleApi.getAll({
         filterRoute,
@@ -52,12 +56,25 @@ export function useTripsFromVehicles(routeIds: string[] | undefined) {
   const trips = useMemo((): Trip[] => {
     if (!data?.data) return [];
     const vehicles = data.data;
-    const included = (data as { included?: Array<{ type: string; id: string; attributes: Trip['attributes']; relationships?: Trip['relationships']; links?: Trip['links'] }> }).included ?? [];
-    const tripIds = [...new Set(
-      vehicles
-        .map((v) => v.relationships?.trip?.data?.id)
-        .filter((id): id is string => Boolean(id)),
-    )];
+    const included =
+      (
+        data as {
+          included?: Array<{
+            type: string;
+            id: string;
+            attributes: Trip['attributes'];
+            relationships?: Trip['relationships'];
+            links?: Trip['links'];
+          }>;
+        }
+      ).included ?? [];
+    const tripIds = [
+      ...new Set(
+        vehicles
+          .map((v) => v.relationships?.trip?.data?.id)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
     const tripById = new Map(
       included
         .filter((x) => x.type === 'trip')
@@ -67,7 +84,9 @@ export function useTripsFromVehicles(routeIds: string[] | undefined) {
             id: t.id,
             type: 'trip' as const,
             attributes: t.attributes,
-            relationships: t.relationships ?? { route: { data: { id: '', type: 'route' } } },
+            relationships: t.relationships ?? {
+              route: { data: { id: '', type: 'route' } },
+            },
             links: t.links ?? { self: '' },
           } satisfies Trip,
         ]),

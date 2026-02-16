@@ -14,7 +14,9 @@ const ENDPOINTS = {
   BASE: '/schedules',
 } as const;
 
-type ScheduleListParams = PaginationParams & FilterParams & ScheduleFilterParams;
+type ScheduleListParams = PaginationParams &
+  FilterParams &
+  ScheduleFilterParams;
 
 function buildDetailQuery(params?: ScheduleDetailParams): string {
   if (!params?.include) return '';
@@ -93,4 +95,3 @@ export const scheduleApi = {
       )}`,
     ),
 };
-

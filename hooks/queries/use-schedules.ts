@@ -7,7 +7,9 @@ import type {
   ScheduleDetailParams,
 } from '@/types/api';
 
-type ScheduleListParams = PaginationParams & FilterParams & ScheduleFilterParams;
+type ScheduleListParams = PaginationParams &
+  FilterParams &
+  ScheduleFilterParams;
 
 export function useSchedules(params?: ScheduleListParams) {
   return useQuery({
@@ -24,4 +26,3 @@ export function useScheduleDetail(id: string, params?: ScheduleDetailParams) {
     enabled: !!id,
   });
 }
-

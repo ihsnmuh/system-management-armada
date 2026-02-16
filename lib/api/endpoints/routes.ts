@@ -74,7 +74,5 @@ export const routeKeys = {
 
 export const routeApi = {
   getAll: (params?: RouteListParams) =>
-    apiClient<ApiListResponse<Route>>(
-      `${ENDPOINTS.BASE}${buildQuery(params)}`,
-    ),
+    apiClient<ApiListResponse<Route>>(`${ENDPOINTS.BASE}${buildQuery(params)}`),
 };

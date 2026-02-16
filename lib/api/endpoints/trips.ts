@@ -76,9 +76,7 @@ export const tripKeys = {
 
 export const tripApi = {
   getAll: (params?: TripListParams) =>
-    apiClient<ApiListResponse<Trip>>(
-      `${ENDPOINTS.BASE}${buildQuery(params)}`,
-    ),
+    apiClient<ApiListResponse<Trip>>(`${ENDPOINTS.BASE}${buildQuery(params)}`),
   getById: (id: string, params?: TripDetailParams) =>
     apiClient<ApiDetailResponse<Trip, Record<string, unknown>>>(
       `${ENDPOINTS.BASE}/${id}${buildDetailQuery(

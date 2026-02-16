@@ -18,18 +18,24 @@ const MapContainer = dynamic(
   () => import('react-leaflet').then((m) => m.MapContainer),
   { ssr: false },
 ) as unknown as ComponentType<MapContainerProps>;
-const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), {
-  ssr: false,
-}) as unknown as ComponentType<TileLayerProps>;
+const TileLayer = dynamic(
+  () => import('react-leaflet').then((m) => m.TileLayer),
+  {
+    ssr: false,
+  },
+) as unknown as ComponentType<TileLayerProps>;
 const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), {
   ssr: false,
 }) as unknown as ComponentType<MarkerProps>;
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), {
   ssr: false,
 }) as unknown as ComponentType<PopupProps>;
-const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), {
-  ssr: false,
-}) as unknown as ComponentType<PolylineProps>;
+const Polyline = dynamic(
+  () => import('react-leaflet').then((m) => m.Polyline),
+  {
+    ssr: false,
+  },
+) as unknown as ComponentType<PolylineProps>;
 const CircleMarker = dynamic(
   () => import('react-leaflet').then((m) => m.CircleMarker),
   { ssr: false },
@@ -68,23 +74,25 @@ function LeafletMap({
   tileAttribution = DEFAULT_TILE_ATTRIBUTION,
   colorRoute,
 }: LeafletMapProps) {
-
-
   useEffect(() => {
     // Fix icon marker Leaflet yang sering hilang di bundler (Next/Webpack/Turbopack).
     // Dieksekusi hanya di browser (useEffect) supaya aman dari SSR.
     void (async () => {
       const leafletModule = await import('leaflet');
-      const L = (leafletModule.default ?? leafletModule) as typeof import('leaflet');
-      const iconRetinaUrl = (await import(
-        'leaflet/dist/images/marker-icon-2x.png'
-      )) as unknown as { default: string };
-      const iconUrl = (await import(
-        'leaflet/dist/images/marker-icon.png'
-      )) as unknown as { default: string };
-      const shadowUrl = (await import(
-        'leaflet/dist/images/marker-shadow.png'
-      )) as unknown as { default: string };
+      const L = (leafletModule.default ??
+        leafletModule) as typeof import('leaflet');
+      const iconRetinaUrl =
+        (await import('leaflet/dist/images/marker-icon-2x.png')) as unknown as {
+          default: string;
+        };
+      const iconUrl =
+        (await import('leaflet/dist/images/marker-icon.png')) as unknown as {
+          default: string;
+        };
+      const shadowUrl =
+        (await import('leaflet/dist/images/marker-shadow.png')) as unknown as {
+          default: string;
+        };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -109,7 +117,8 @@ function LeafletMap({
   }, [center, markers]);
 
   const resolvedShapeCoordinates = useMemo(() => {
-    if (shapeCoordinates && shapeCoordinates.length > 0) return shapeCoordinates;
+    if (shapeCoordinates && shapeCoordinates.length > 0)
+      return shapeCoordinates;
     return [];
   }, [shapeCoordinates]);
 
@@ -146,7 +155,10 @@ function LeafletMap({
           </Marker>
         ))}
         {resolvedShapeCoordinates.length > 0 && (
-          <Polyline pathOptions={{ color: colorRoute ?? '#000000' }} positions={resolvedShapeCoordinates} />
+          <Polyline
+            pathOptions={{ color: colorRoute ?? '#000000' }}
+            positions={resolvedShapeCoordinates}
+          />
         )}
         {resolvedSchedulePoints.map((point, index) => (
           <CircleMarker

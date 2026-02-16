@@ -1,11 +1,6 @@
 'use client';
 
-import React, {
-  type RefObject,
-  useCallback,
-  useMemo,
-  useState,
-} from 'react';
+import React, { type RefObject, useCallback, useMemo, useState } from 'react';
 import {
   Combobox,
   ComboboxChip,
@@ -93,9 +88,12 @@ export default function InfiniteFilterDropdown({
   const selectedValues = isControlled ? controlledValue : internalValues;
   const setSelectedValues = isControlled
     ? (v: string[] | ((prev: string[]) => string[])) => {
-        const next =
-          typeof v === 'function' ? v(controlledValue) : v;
-        const normalized = Array.isArray(next) ? next : next != null ? [next] : [];
+        const next = typeof v === 'function' ? v(controlledValue) : v;
+        const normalized = Array.isArray(next)
+          ? next
+          : next != null
+            ? [next]
+            : [];
         const withoutSentinel = normalized.filter((id) => id !== sentinelValue);
         onControlledChange(withoutSentinel);
       }
@@ -103,13 +101,10 @@ export default function InfiniteFilterDropdown({
 
   const { comboboxItems, getDisplayLabel } = useMemo(() => {
     if (isFilterOptions(options)) {
-      const valueToOption = new Map(
-        options.map((o) => [o.value, o] as const),
-      );
+      const valueToOption = new Map(options.map((o) => [o.value, o] as const));
       return {
         comboboxItems: options.map((o) => o.value),
-        getDisplayLabel: (id: string) =>
-          valueToOption.get(id)?.label ?? id,
+        getDisplayLabel: (id: string) => valueToOption.get(id)?.label ?? id,
       };
     }
     return {
@@ -140,7 +135,7 @@ export default function InfiniteFilterDropdown({
       <FieldLabel
         className={cn(
           'text-lg font-bold uppercase tracking-wide',
-          'text-primary'
+          'text-primary',
         )}
       >
         {label}
@@ -160,7 +155,7 @@ export default function InfiniteFilterDropdown({
           ref={anchorRef}
           className={cn(
             'min-h-9 max-h-9 w-full min-w-0 bg-muted/50 flex-nowrap',
-            'overflow-hidden'
+            'overflow-hidden',
           )}
         >
           <ComboboxValue>
@@ -170,7 +165,7 @@ export default function InfiniteFilterDropdown({
                   className={cn(
                     'flex min-w-0 flex-1 flex-nowrap items-center gap-1.5',
                     'overflow-x-auto overflow-y-hidden py-1',
-                    '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+                    '[scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
                   )}
                 >
                   {values.map((value) => (
@@ -178,9 +173,7 @@ export default function InfiniteFilterDropdown({
                       key={value}
                       className="shrink-0 truncate max-w-[200px]"
                     >
-                      <span className="truncate">
-                        {getDisplayLabel(value)}
-                      </span>
+                      <span className="truncate">{getDisplayLabel(value)}</span>
                     </ComboboxChip>
                   ))}
                   <ComboboxChipsInput placeholder={placeholder} />
