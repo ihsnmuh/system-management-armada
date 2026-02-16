@@ -14,6 +14,7 @@ import {
     Bus,
     CheckCircle2,
     Clock,
+    Loader2,
     MapPin,
     RefreshCw,
     Route,
@@ -179,10 +180,23 @@ export function DialogDetail({
                                 }
                             />
                         </div>
-                        {!isBusy && (
-                            <div className="flex items-center gap-1.5 text-sm text-emerald-600">
-                                <span className="size-2 rounded-full bg-emerald-500" />
-                                Live Tracking Active
+                        {vehicleDetail?.data && (
+                            <div className="flex min-h-[20px] items-center gap-1.5 text-sm">
+                                {isBusy ? (
+                                    <>
+                                        <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />
+                                        <span className="text-muted-foreground">
+                                            Memperbarui data...
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="size-2 rounded-full bg-emerald-500" />
+                                        <span className="text-emerald-600">
+                                            Live Tracking Active
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -190,12 +204,7 @@ export function DialogDetail({
 
                 {/* Body */}
                 <div className="max-h-[70vh] overflow-y-auto">
-                    {isBusy && (
-                        <div className="py-8 text-center text-muted-foreground text-sm">
-                            Memuat detail kendaraan...
-                        </div>
-                    )}
-                    {!isBusy && (
+                    {vehicleDetail?.data ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-6 py-4">
                             {/* Left column */}
                             <div className="flex flex-col gap-4">
@@ -444,6 +453,10 @@ export function DialogDetail({
                                     <div className="min-h-[200px] rounded-lg border border-dashed bg-muted/30" />
                                 </div>
                             </div>
+                        </div>
+                    ) : (
+                        <div className="py-8 text-center text-muted-foreground text-sm">
+                            Memuat detail kendaraan...
                         </div>
                     )}
                 </div>
