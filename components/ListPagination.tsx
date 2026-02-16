@@ -21,7 +21,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { cn } from '@/lib/utils';
 
-const LIMIT_OPTIONS = [10, 30, 50, 100] as const;
+const LIMIT_OPTIONS = [12, 24, 48, 96] as const;
 
 interface ListPaginationProps {
   isLoading: boolean;

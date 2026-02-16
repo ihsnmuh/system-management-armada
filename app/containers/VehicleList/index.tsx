@@ -11,7 +11,7 @@ import { DialogDetail } from '@/components/DialogDetail';
 import { toast } from 'sonner';
 
 const ContainerVehicleList = () => {
-  const [limitPerPage, setLimitPerPage] = useState(10);
+  const [limitPerPage, setLimitPerPage] = useState(12);
   const [currentPage, setCurrentPage] = useState(0);
   const [includeVehicles] = useState<string[]>(['route', 'trip']);
   const [appliedRouteIds, setAppliedRouteIds] = useState<string[]>([]);
