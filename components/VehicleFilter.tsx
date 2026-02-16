@@ -8,7 +8,7 @@ import InfiniteFilterDropdown, {
   type FilterOption,
 } from '@/components/InfiniteFilterDropdown';
 import { useRoutesInfinite } from '@/hooks/queries/use-routes';
-import { useTripsInfinite } from '@/hooks/queries/use-trips';
+import { useTripsFromVehicles } from '@/hooks/queries/use-vehicles';
 import type { Trip } from '@/types/api';
 
 const ROUTE_LOAD_MORE_SENTINEL = '__LOAD_MORE_ROUTES__';
@@ -66,7 +66,7 @@ export interface VehicleFilterApplyPayload {
   tripIds: string[];
 }
 
-/** Format tampilan trip: satu baris informatif — Headsign - Rute / nama jadwal (ID). */
+/** Format tampilan trip: Headsign · Rute (tanpa duplikat), atau Headsign (ID) bila rute kosong. */
 function TripOptionLabel({
   trip,
   routeLongName,
@@ -74,14 +74,19 @@ function TripOptionLabel({
   trip: Trip;
   routeLongName: string;
 }) {
-  const headsign = trip.attributes.headsign ?? trip.attributes.name ?? trip.id;
-  const suffix = trip.attributes.name
-    ? trip.attributes.name
-    : routeLongName
-      ? `${routeLongName} (${trip.id})`
-      : trip.id;
-  const line = `${headsign} - ${suffix}`;
-  return <span className="block min-w-0 truncate text-left">{line}</span>;
+  const main =
+    trip.attributes.headsign ?? trip.attributes.name ?? trip.id;
+  const route = routeLongName.trim();
+  const line = route
+    ? main === route
+      ? main
+      : `${main} · ${route}`
+    : main === trip.id
+      ? trip.id
+      : `${main} (${trip.id})`;
+  return (
+    <span className="block min-w-0 truncate text-left">{line}</span>
+  );
 }
 
 export interface VehicleFilterProps {
@@ -137,18 +142,8 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
   const tripFilterRoute =
     selectedRouteIds.length > 0 ? selectedRouteIds.join(',') : undefined;
 
-  const {
-    trips,
-    fetchNextPage: fetchNextTripPage,
-    hasNextPage: hasNextTripPage,
-    isFetchingNextPage: isFetchingNextTripPage,
-    isLoading: isTripsLoading,
-  } = useTripsInfinite(
-    PAGE_SIZE,
-    tripFilterRoute
-      ? { filterRoute: tripFilterRoute }
-      : undefined,
-    { enabled: !!tripFilterRoute },
+  const { trips, isLoading: isTripsLoading } = useTripsFromVehicles(
+    selectedRouteIds.length > 0 ? selectedRouteIds : undefined,
   );
 
   const routeOptions = useMemo<FilterOption[]>(
@@ -231,14 +226,12 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
 
   const filteredTripItems = useMemo(() => {
     const q = tripSearchValue.trim().toLowerCase();
-    const filtered = q
+    return q
       ? tripOptions
           .filter((o) => (o.searchText ?? String(o.label)).toLowerCase().includes(q))
           .map((o) => o.value)
       : tripOptions.map((o) => o.value);
-    if (hasNextTripPage) return [...filtered, TRIP_LOAD_MORE_SENTINEL];
-    return filtered;
-  }, [tripOptions, tripSearchValue, hasNextTripPage]);
+  }, [tripOptions, tripSearchValue]);
 
   const handleTypeValueChange = (value: string[]) => {
     setSelectedTypeIds(value);
@@ -268,24 +261,6 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     hasNextRoutePage,
     isFetchingNextRoutePage,
     fetchNextRoutePage,
-  ]);
-
-  useEffect(() => {
-    if (
-      tripSearchValue.trim() &&
-      filteredTripItems.filter((i) => i !== TRIP_LOAD_MORE_SENTINEL)
-        .length === 0 &&
-      hasNextTripPage &&
-      !isFetchingNextTripPage
-    ) {
-      fetchNextTripPage();
-    }
-  }, [
-    tripSearchValue,
-    filteredTripItems,
-    hasNextTripPage,
-    isFetchingNextTripPage,
-    fetchNextTripPage,
   ]);
 
   return (
@@ -329,20 +304,20 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
 
           <InfiniteFilterDropdown
             label="Trip"
-            placeholder="Cari trip..."
+            placeholder="Cari trip…"
             options={tripOptions}
             filteredItems={filteredTripItems}
             searchValue={tripSearchValue}
             onSearchChange={setTripSearchValue}
-            hasNextPage={hasNextTripPage}
-            isFetchingNextPage={isFetchingNextTripPage}
+            hasNextPage={false}
+            isFetchingNextPage={false}
             isLoading={isTripsLoading}
             loadMoreRef={tripLoadMoreRef}
             sentinelValue={TRIP_LOAD_MORE_SENTINEL}
             value={selectedTripIds}
             onValueChange={setSelectedTripIds}
             disabled={!tripFilterRoute}
-            onLoadMore={fetchNextTripPage}
+            onLoadMore={() => {}}
           />
 
           <div className="flex shrink-0 items-center gap-2">
