@@ -9,7 +9,7 @@ export type VehicleWithRoute = Vehicle & {
   routeDetail: RouteType | null;
 };
 
-import { MapPin, Route, Clock, Eye, PersonStanding } from 'lucide-react';
+import { MapPin, Route, Clock, Eye, PersonStanding, Bus, Ship, Train } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TypographyH3 } from '../Typography';
 
@@ -40,6 +40,8 @@ const VehicleCard = ({
 }) => {
   const { attributes, relationships, routeDetail } = vehicle;
 
+  const routeType = routeDetail?.attributes?.type;
+
   const updatedAtTimeOnly = useMemo(() => {
     if (!attributes.updated_at) return null;
     const date = new Date(attributes.updated_at);
@@ -61,11 +63,37 @@ const VehicleCard = ({
     <Card className="group hover:shadow-md transition-all duration-200 hover:border-primary/20">
       <CardHeader className="pb-0">
         <div className="flex items-center justify-between gap-2">
-          <TypographyH3 className="text-primary tracking-tight font-bold">
-            {attributes.label}
-          </TypographyH3>
+          <div className="flex items-center gap-2">
+            {routeType !== undefined && (
+              <span
+                className={`flex size-7 shrink-0 items-center justify-center rounded-full ${
+                  routeType === 2
+                    ? 'bg-purple-600 text-white'
+                    : routeType === 0 || routeType === 1
+                      ? 'bg-slate-600 text-white'
+                      : routeType === 4
+                        ? 'bg-teal-500 text-white'
+                        : routeType === 3
+                          ? 'bg-amber-400 text-black'
+                          : 'bg-teal-500 text-black'
+                }`}
+              >
+                {routeType === 0 || routeType === 1 || routeType === 2 ? (
+                  <Train className="size-4" />
+                ) : routeType === 4 ? (
+                  <Ship className="size-4" />
+                ) : (
+                  <Bus className="size-4" />
+                )}
+              </span>
+            )}
+            <TypographyH3 className="text-primary tracking-tight font-bold">
+              {attributes.label}
+            </TypographyH3>
+          </div>
           <BadgeCustom currentStatus={attributes.current_status} />
         </div>
+        
 
         {relationships.route?.data?.id && (
           <div className="flex items-start gap-1.5 text-sm text-muted-foreground">

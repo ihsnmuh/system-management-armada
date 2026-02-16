@@ -154,12 +154,6 @@ function LeafletMap({
             {m.popup ? <Popup>{m.popup}</Popup> : null}
           </Marker>
         ))}
-        {resolvedShapeCoordinates.length > 0 && (
-          <Polyline
-            pathOptions={{ color: colorRoute ?? '#000000' }}
-            positions={resolvedShapeCoordinates}
-          />
-        )}
         {resolvedSchedulePoints.map((point, index) => (
           <CircleMarker
             key={`schedule-point-${index}`}
@@ -173,6 +167,12 @@ function LeafletMap({
             }}
           />
         ))}
+        {resolvedShapeCoordinates.length > 0 && (
+          <Polyline
+            pathOptions={{ color: colorRoute ?? '#000000' }}
+            positions={resolvedShapeCoordinates}
+          />
+        )}
       </MapContainer>
     </div>
   );
