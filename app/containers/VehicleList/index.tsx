@@ -13,11 +13,19 @@ const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
   const [includeVehicles] = useState<string[]>(['route']);
+  const [appliedRouteIds, setAppliedRouteIds] = useState<string[]>([]);
+  const [appliedTripIds, setAppliedTripIds] = useState<string[]>([]);
 
   const { data, isLoading, isFetching } = useVehicles({
     limit: limitPerPage,
     offset: currentPage * limitPerPage,
     include: includeVehicles.join(','),
+    ...(appliedRouteIds.length > 0 && {
+      filterRoute: appliedRouteIds.join(','),
+    }),
+    ...(appliedTripIds.length > 0 && {
+      filterTrip: appliedTripIds.join(','),
+    }),
   });
 
   const isRefetching = isFetching && !isLoading;
@@ -41,6 +49,21 @@ const ContainerVehicleList = () => {
 
   const handleLimitChange = (value: string) => {
     setLimitPerPage(Number(value));
+    setCurrentPage(0);
+  };
+
+  const handleApplyFilter = (payload: {
+    routeIds: string[];
+    tripIds: string[];
+  }) => {
+    setAppliedRouteIds(payload.routeIds);
+    setAppliedTripIds(payload.tripIds);
+    setCurrentPage(0);
+  };
+
+  const handleResetFilter = () => {
+    setAppliedRouteIds([]);
+    setAppliedTripIds([]);
     setCurrentPage(0);
   };
 
@@ -69,7 +92,10 @@ const ContainerVehicleList = () => {
         </div>
       )} */}
 
-      <VehicleFilter />
+      <VehicleFilter
+        onApplyFilter={handleApplyFilter}
+        onReset={handleResetFilter}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&

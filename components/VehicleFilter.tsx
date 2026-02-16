@@ -16,6 +16,11 @@ const TRIP_LOAD_MORE_SENTINEL = '__LOAD_MORE_TRIPS__';
 
 const PAGE_SIZE = 20;
 
+export interface VehicleFilterApplyPayload {
+  routeIds: string[];
+  tripIds: string[];
+}
+
 /** Format tampilan trip: satu baris informatif — Headsign - Rute / nama jadwal (ID). */
 function TripOptionLabel({
   trip,
@@ -34,13 +39,33 @@ function TripOptionLabel({
   return <span className="block min-w-0 truncate text-left">{line}</span>;
 }
 
-const VehicleFilter = () => {
+export interface VehicleFilterProps {
+  onApplyFilter?: (payload: VehicleFilterApplyPayload) => void;
+  onReset?: () => void;
+}
+
+const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
   const routeLoadMoreRef = useRef<HTMLDivElement>(null);
   const tripLoadMoreRef = useRef<HTMLDivElement>(null);
   const [routeSearchValue, setRouteSearchValue] = useState('');
   const [tripSearchValue, setTripSearchValue] = useState('');
   const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>([]);
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
+
+  const handleApply = () => {
+    onApplyFilter?.({
+      routeIds: selectedRouteIds,
+      tripIds: selectedTripIds,
+    });
+  };
+
+  const handleReset = () => {
+    setSelectedRouteIds([]);
+    setSelectedTripIds([]);
+    setRouteSearchValue('');
+    setTripSearchValue('');
+    onReset?.();
+  };
 
   const {
     routes,
@@ -206,11 +231,21 @@ const VehicleFilter = () => {
           />
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button size="default" className="gap-2">
+            <Button
+              size="default"
+              className="gap-2"
+              onClick={handleApply}
+              type="button"
+            >
               <Filter className="size-4" />
               Terapkan Filter
             </Button>
-            <Button variant="secondary" size="default">
+            <Button
+              variant="secondary"
+              size="default"
+              onClick={handleReset}
+              type="button"
+            >
               Reset
             </Button>
           </div>
