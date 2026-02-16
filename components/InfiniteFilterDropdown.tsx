@@ -1,6 +1,11 @@
 'use client';
 
-import React, { type RefObject, useCallback, useState } from 'react';
+import React, {
+  type RefObject,
+  useCallback,
+  useMemo,
+  useState,
+} from 'react';
 import {
   Combobox,
   ComboboxChip,
@@ -20,10 +25,30 @@ import { XIcon } from 'lucide-react';
 
 const SCROLL_THRESHOLD = 80;
 
+/** Opsi dengan value (id) dan label (tampilan) terpisah; searchText untuk filter. */
+export interface FilterOption {
+  value: string;
+  label: React.ReactNode;
+  searchText?: string;
+}
+
+export type InfiniteFilterDropdownOptions = string[] | FilterOption[];
+
+function isFilterOptions(
+  options: InfiniteFilterDropdownOptions,
+): options is FilterOption[] {
+  return (
+    options.length > 0 &&
+    typeof options[0] === 'object' &&
+    options[0] !== null &&
+    'value' in options[0]
+  );
+}
+
 export interface InfiniteFilterDropdownProps {
   label: string;
   placeholder: string;
-  options: string[];
+  options: InfiniteFilterDropdownOptions;
   filteredItems: string[];
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -33,7 +58,12 @@ export interface InfiniteFilterDropdownProps {
   loadMoreRef: RefObject<HTMLDivElement | null>;
   sentinelValue: string;
   defaultValue?: string[];
+  value?: string[];
+  onValueChange?: (value: string[]) => void;
   onLoadMore: () => void;
+  disabled?: boolean;
+  /** ClassName untuk tiap item di list (mis. agar label dua baris tampil penuh). */
+  itemClassName?: string;
 }
 
 export default function InfiniteFilterDropdown({
@@ -49,12 +79,44 @@ export default function InfiniteFilterDropdown({
   loadMoreRef,
   sentinelValue,
   defaultValue = [],
+  value: controlledValue,
+  onValueChange: onControlledChange,
   onLoadMore,
+  disabled = false,
+  itemClassName,
 }: InfiniteFilterDropdownProps) {
   const anchorRef = useComboboxAnchor();
-  const [selectedValues, setSelectedValues] = useState<string[]>(
-    () => defaultValue
+  const [internalValues, setInternalValues] = useState<string[]>(
+    () => defaultValue,
   );
+  const isControlled = controlledValue !== undefined && onControlledChange;
+  const selectedValues = isControlled ? controlledValue : internalValues;
+  const setSelectedValues = isControlled
+    ? (v: string[] | ((prev: string[]) => string[])) => {
+        const next =
+          typeof v === 'function' ? v(controlledValue) : v;
+        const normalized = Array.isArray(next) ? next : next != null ? [next] : [];
+        const withoutSentinel = normalized.filter((id) => id !== sentinelValue);
+        onControlledChange(withoutSentinel);
+      }
+    : setInternalValues;
+
+  const { comboboxItems, getDisplayLabel } = useMemo(() => {
+    if (isFilterOptions(options)) {
+      const valueToOption = new Map(
+        options.map((o) => [o.value, o] as const),
+      );
+      return {
+        comboboxItems: options.map((o) => o.value),
+        getDisplayLabel: (id: string) =>
+          valueToOption.get(id)?.label ?? id,
+      };
+    }
+    return {
+      comboboxItems: options,
+      getDisplayLabel: (x: string) => x,
+    };
+  }, [options]);
 
   const handleScroll = useCallback(
     (e: React.UIEvent<HTMLDivElement>) => {
@@ -69,7 +131,12 @@ export default function InfiniteFilterDropdown({
   );
 
   return (
-    <Field className="min-w-[180px] flex-1 basis-40">
+    <Field
+      className={cn(
+        'min-w-[180px] flex-1 basis-40',
+        disabled && 'pointer-events-none opacity-60',
+      )}
+    >
       <FieldLabel
         className={cn(
           'text-lg font-bold uppercase tracking-wide',
@@ -81,11 +148,12 @@ export default function InfiniteFilterDropdown({
       <Combobox
         multiple
         autoHighlight
-        items={options}
+        disabled={disabled}
+        items={comboboxItems}
         filteredItems={filteredItems}
         inputValue={searchValue}
         onInputValueChange={(value) => onSearchChange(value ?? '')}
-        value={selectedValues}
+        value={selectedValues.filter((v) => v !== sentinelValue)}
         onValueChange={(value) => setSelectedValues(value ?? [])}
       >
         <ComboboxChips
@@ -108,9 +176,11 @@ export default function InfiniteFilterDropdown({
                   {values.map((value) => (
                     <ComboboxChip
                       key={value}
-                      className="shrink-0 truncate max-w-[120px]"
+                      className="shrink-0 truncate max-w-[200px]"
                     >
-                      <span className="truncate">{value}</span>
+                      <span className="truncate">
+                        {getDisplayLabel(value)}
+                      </span>
                     </ComboboxChip>
                   ))}
                   <ComboboxChipsInput placeholder={placeholder} />
@@ -124,7 +194,7 @@ export default function InfiniteFilterDropdown({
                     onClick={() => setSelectedValues([])}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
-                   <XIcon className="size-4" />
+                    <XIcon className="size-4" />
                   </Button>
                 )}
               </>
@@ -147,8 +217,12 @@ export default function InfiniteFilterDropdown({
                   {isFetchingNextPage ? 'Loading more…' : null}
                 </div>
               ) : (
-                <ComboboxItem key={`${item}-${index}`} value={item}>
-                  {item}
+                <ComboboxItem
+                  key={`${item}-${index}`}
+                  value={item}
+                  className={itemClassName}
+                >
+                  {getDisplayLabel(item)}
                 </ComboboxItem>
               )
             }

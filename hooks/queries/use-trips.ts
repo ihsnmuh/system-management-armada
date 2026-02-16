@@ -26,6 +26,7 @@ function todayDateString(): string {
 export function useTripsInfinite(
   pageSize = TRIPS_PAGE_SIZE,
   params?: Omit<TripListParams, 'limit' | 'offset'>,
+  options?: { enabled?: boolean },
 ) {
   const result = useInfiniteQuery({
     queryKey: [...tripKeys.all, 'infinite', { pageSize, params }] as const,
@@ -41,6 +42,7 @@ export function useTripsInfinite(
       return allPages.length * pageSize;
     },
     initialPageParam: 0,
+    enabled: options?.enabled ?? true,
   });
 
   const trips: Trip[] = result.data?.pages.flatMap((p) => p.data) ?? [];

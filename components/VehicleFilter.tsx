@@ -4,20 +4,43 @@ import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Filter } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import InfiniteFilterDropdown from '@/components/InfiniteFilterDropdown';
+import InfiniteFilterDropdown, {
+  type FilterOption,
+} from '@/components/InfiniteFilterDropdown';
 import { useRoutesInfinite } from '@/hooks/queries/use-routes';
 import { useTripsInfinite } from '@/hooks/queries/use-trips';
+import type { Trip } from '@/types/api';
 
 const ROUTE_LOAD_MORE_SENTINEL = '__LOAD_MORE_ROUTES__';
 const TRIP_LOAD_MORE_SENTINEL = '__LOAD_MORE_TRIPS__';
 
 const PAGE_SIZE = 20;
 
+/** Format tampilan trip: satu baris informatif — Headsign - Rute / nama jadwal (ID). */
+function TripOptionLabel({
+  trip,
+  routeLongName,
+}: {
+  trip: Trip;
+  routeLongName: string;
+}) {
+  const headsign = trip.attributes.headsign ?? trip.attributes.name ?? trip.id;
+  const suffix = trip.attributes.name
+    ? trip.attributes.name
+    : routeLongName
+      ? `${routeLongName} (${trip.id})`
+      : trip.id;
+  const line = `${headsign} - ${suffix}`;
+  return <span className="block min-w-0 truncate text-left">{line}</span>;
+}
+
 const VehicleFilter = () => {
   const routeLoadMoreRef = useRef<HTMLDivElement>(null);
   const tripLoadMoreRef = useRef<HTMLDivElement>(null);
   const [routeSearchValue, setRouteSearchValue] = useState('');
   const [tripSearchValue, setTripSearchValue] = useState('');
+  const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>([]);
+  const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
   const {
     routes,
@@ -27,37 +50,65 @@ const VehicleFilter = () => {
     isLoading: isRoutesLoading,
   } = useRoutesInfinite(PAGE_SIZE);
 
+  const tripFilterRoute =
+    selectedRouteIds.length > 0 ? selectedRouteIds.join(',') : undefined;
+
   const {
     trips,
     fetchNextPage: fetchNextTripPage,
     hasNextPage: hasNextTripPage,
     isFetchingNextPage: isFetchingNextTripPage,
     isLoading: isTripsLoading,
-  } = useTripsInfinite(PAGE_SIZE);
+  } = useTripsInfinite(
+    PAGE_SIZE,
+    tripFilterRoute
+      ? { filterRoute: tripFilterRoute }
+      : undefined,
+    { enabled: !!tripFilterRoute },
+  );
 
-  const routeOptions = useMemo(
-    () => routes.map((r) => r.attributes.long_name),
+  const routeOptions = useMemo<FilterOption[]>(
+    () =>
+      routes.map((r) => ({
+        value: r.id,
+        label: r.attributes.long_name,
+        searchText: r.attributes.long_name,
+      })),
     [routes],
   );
 
-  const tripOptions = useMemo(
+  const tripOptions = useMemo<FilterOption[]>(
     () =>
-      trips.map(
-        (t) =>
-          t.attributes.headsign ||
-          t.attributes.name ||
-          t.id,
-      ),
-    [trips],
+      trips.map((t) => {
+        const routeId = t.relationships?.route?.data?.id;
+        const routeLongName =
+          (routeId && routes.find((r) => r.id === routeId)?.attributes.long_name) ?? '';
+        const headsign = t.attributes.headsign ?? t.attributes.name ?? t.id;
+        const line2 =
+          t.attributes.name ??
+          (routeLongName ? `${routeLongName} (${t.id})` : t.id);
+        const searchText = [headsign, line2, t.id].join(' ').toLowerCase();
+        return {
+          value: t.id,
+          label: (
+            <TripOptionLabel
+              trip={t}
+              routeLongName={routeLongName}
+            />
+          ),
+          searchText,
+        };
+      }),
+    [trips, routes],
   );
 
   const filteredRouteItems = useMemo(() => {
     const q = routeSearchValue.trim().toLowerCase();
     const filtered = q
-      ? routeOptions.filter((label) =>
-          label.toLowerCase().includes(q),
-        )
-      : routeOptions;
+      ? routeOptions
+          .filter((o) => (o.searchText ?? String(o.label)).toLowerCase().includes(q))
+          .map((o) => o.value)
+      : routeOptions.map((o) => o.value);
     if (hasNextRoutePage) return [...filtered, ROUTE_LOAD_MORE_SENTINEL];
     return filtered;
   }, [routeOptions, routeSearchValue, hasNextRoutePage]);
@@ -65,13 +116,18 @@ const VehicleFilter = () => {
   const filteredTripItems = useMemo(() => {
     const q = tripSearchValue.trim().toLowerCase();
     const filtered = q
-      ? tripOptions.filter((label) =>
-          label.toLowerCase().includes(q),
-        )
-      : tripOptions;
+      ? tripOptions
+          .filter((o) => (o.searchText ?? String(o.label)).toLowerCase().includes(q))
+          .map((o) => o.value)
+      : tripOptions.map((o) => o.value);
     if (hasNextTripPage) return [...filtered, TRIP_LOAD_MORE_SENTINEL];
     return filtered;
   }, [tripOptions, tripSearchValue, hasNextTripPage]);
+
+  const handleRouteValueChange = (value: string[]) => {
+    setSelectedRouteIds(value);
+    setSelectedTripIds([]);
+  };
 
   // Saat search tidak menemukan hasil di data yang sudah dimuat, fetch halaman berikutnya
   useEffect(() => {
@@ -126,6 +182,8 @@ const VehicleFilter = () => {
             isLoading={isRoutesLoading}
             loadMoreRef={routeLoadMoreRef}
             sentinelValue={ROUTE_LOAD_MORE_SENTINEL}
+            value={selectedRouteIds}
+            onValueChange={handleRouteValueChange}
             onLoadMore={fetchNextRoutePage}
           />
 
@@ -141,6 +199,9 @@ const VehicleFilter = () => {
             isLoading={isTripsLoading}
             loadMoreRef={tripLoadMoreRef}
             sentinelValue={TRIP_LOAD_MORE_SENTINEL}
+            value={selectedTripIds}
+            onValueChange={setSelectedTripIds}
+            disabled={!tripFilterRoute}
             onLoadMore={fetchNextTripPage}
           />
 
