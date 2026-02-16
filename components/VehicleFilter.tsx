@@ -16,6 +16,15 @@ const TRIP_LOAD_MORE_SENTINEL = '__LOAD_MORE_TRIPS__';
 
 const PAGE_SIZE = 20;
 
+/** GTFS route_type: 0=Light Rail, 1=Heavy Rail, 2=Commuter Rail, 3=Bus, 4=Ferry */
+const ROUTE_TYPE_OPTIONS: FilterOption[] = [
+  { value: '0', label: 'Light Rail', searchText: 'light rail' },
+  { value: '1', label: 'Heavy Rail', searchText: 'heavy rail' },
+  { value: '2', label: 'Commuter Rail', searchText: 'commuter rail' },
+  { value: '3', label: 'Bus', searchText: 'bus' },
+  { value: '4', label: 'Ferry', searchText: 'ferry' },
+];
+
 export interface VehicleFilterApplyPayload {
   routeIds: string[];
   tripIds: string[];
@@ -44,11 +53,16 @@ export interface VehicleFilterProps {
   onReset?: () => void;
 }
 
+const TYPE_LOAD_MORE_SENTINEL = '__LOAD_MORE_TYPE__';
+
 const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
+  const typeLoadMoreRef = useRef<HTMLDivElement>(null);
   const routeLoadMoreRef = useRef<HTMLDivElement>(null);
   const tripLoadMoreRef = useRef<HTMLDivElement>(null);
+  const [typeSearchValue, setTypeSearchValue] = useState('');
   const [routeSearchValue, setRouteSearchValue] = useState('');
   const [tripSearchValue, setTripSearchValue] = useState('');
+  const [selectedTypeIds, setSelectedTypeIds] = useState<string[]>([]);
   const [selectedRouteIds, setSelectedRouteIds] = useState<string[]>([]);
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
 
@@ -60,12 +74,17 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
   };
 
   const handleReset = () => {
+    setSelectedTypeIds([]);
     setSelectedRouteIds([]);
     setSelectedTripIds([]);
+    setTypeSearchValue('');
     setRouteSearchValue('');
     setTripSearchValue('');
     onReset?.();
   };
+
+  const routeFilterType =
+    selectedTypeIds.length > 0 ? selectedTypeIds.join(',') : undefined;
 
   const {
     routes,
@@ -73,7 +92,11 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     hasNextPage: hasNextRoutePage,
     isFetchingNextPage: isFetchingNextRoutePage,
     isLoading: isRoutesLoading,
-  } = useRoutesInfinite(PAGE_SIZE);
+  } = useRoutesInfinite(
+    PAGE_SIZE,
+    routeFilterType ? { filterType: routeFilterType } : undefined,
+    { enabled: !!routeFilterType },
+  );
 
   const tripFilterRoute =
     selectedRouteIds.length > 0 ? selectedRouteIds.join(',') : undefined;
@@ -127,6 +150,15 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     [trips, routes],
   );
 
+  const filteredTypeItems = useMemo(() => {
+    const q = typeSearchValue.trim().toLowerCase();
+    return q
+      ? ROUTE_TYPE_OPTIONS.filter((o) =>
+          (o.searchText ?? String(o.label)).toLowerCase().includes(q),
+        ).map((o) => o.value)
+      : ROUTE_TYPE_OPTIONS.map((o) => o.value);
+  }, [typeSearchValue]);
+
   const filteredRouteItems = useMemo(() => {
     const q = routeSearchValue.trim().toLowerCase();
     const filtered = q
@@ -148,6 +180,12 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
     if (hasNextTripPage) return [...filtered, TRIP_LOAD_MORE_SENTINEL];
     return filtered;
   }, [tripOptions, tripSearchValue, hasNextTripPage]);
+
+  const handleTypeValueChange = (value: string[]) => {
+    setSelectedTypeIds(value);
+    setSelectedRouteIds([]);
+    setSelectedTripIds([]);
+  };
 
   const handleRouteValueChange = (value: string[]) => {
     setSelectedRouteIds(value);
@@ -196,6 +234,23 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
       <CardContent>
         <div className="flex flex-wrap items-end gap-4">
           <InfiniteFilterDropdown
+            label="Tipe"
+            placeholder="Cari tipe…"
+            options={ROUTE_TYPE_OPTIONS}
+            filteredItems={filteredTypeItems}
+            searchValue={typeSearchValue}
+            onSearchChange={setTypeSearchValue}
+            hasNextPage={false}
+            isFetchingNextPage={false}
+            isLoading={false}
+            loadMoreRef={typeLoadMoreRef}
+            sentinelValue={TYPE_LOAD_MORE_SENTINEL}
+            value={selectedTypeIds}
+            onValueChange={handleTypeValueChange}
+            onLoadMore={() => {}}
+          />
+
+          <InfiniteFilterDropdown
             label="Rute"
             placeholder="Cari rute…"
             options={routeOptions}
@@ -209,6 +264,7 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
             sentinelValue={ROUTE_LOAD_MORE_SENTINEL}
             value={selectedRouteIds}
             onValueChange={handleRouteValueChange}
+            disabled={!routeFilterType}
             onLoadMore={fetchNextRoutePage}
           />
 
@@ -233,9 +289,12 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
           <div className="flex shrink-0 items-center gap-2">
             <Button
               size="default"
-              className="gap-2"
+              className="gap-2 cursor-pointer"
               onClick={handleApply}
               type="button"
+              disabled={
+                selectedRouteIds.length === 0 && selectedTripIds.length === 0
+              }
             >
               <Filter className="size-4" />
               Terapkan Filter
@@ -243,6 +302,7 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
             <Button
               variant="secondary"
               size="default"
+              className="cursor-pointer"
               onClick={handleReset}
               type="button"
             >

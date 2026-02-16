@@ -18,16 +18,26 @@ export function useRoutes(params?: RouteListParams) {
   });
 }
 
-export function useRoutesInfinite(pageSize = ROUTES_PAGE_SIZE) {
+export function useRoutesInfinite(
+  pageSize = ROUTES_PAGE_SIZE,
+  params?: Omit<RouteListParams, 'limit' | 'offset'>,
+  options?: { enabled?: boolean },
+) {
   const result = useInfiniteQuery({
-    queryKey: [...routeKeys.all, 'infinite', { pageSize }] as const,
+    queryKey: [...routeKeys.all, 'infinite', { pageSize, params }] as const,
     queryFn: ({ pageParam }) =>
-      routeApi.getAll({ limit: pageSize, offset: pageParam, sort: 'long_name' }),
+      routeApi.getAll({
+        ...params,
+        limit: pageSize,
+        offset: pageParam,
+        sort: params?.sort ?? 'long_name',
+      }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.data.length < pageSize) return undefined;
       return allPages.length * pageSize;
     },
     initialPageParam: 0,
+    enabled: options?.enabled ?? true,
   });
 
   const routes: Route[] = result.data?.pages.flatMap((p) => p.data) ?? [];
