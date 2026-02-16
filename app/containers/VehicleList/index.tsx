@@ -99,9 +99,22 @@ const ContainerVehicleList = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&
-          vehicles?.map((vehicle) => (
+          vehicles &&
+          vehicles.length > 0 &&
+          vehicles.map((vehicle) => (
             <VehicleCard key={vehicle.id} vehicle={vehicle} />
           ))}
+
+        {!isLoading && (!vehicles || vehicles.length === 0) && (
+          <div className="col-span-full min-h-dvh flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 px-4 py-12 text-center">
+            <p className="text-sm font-medium text-muted-foreground">
+              Tidak ada data kendaraan
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Coba ubah filter rute/trip atau tunggu sebentar.
+            </p>
+          </div>
+        )}
 
         {isLoading &&
           Array.from({ length: limitPerPage }).map((_, index) => (
