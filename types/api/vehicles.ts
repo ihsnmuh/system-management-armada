@@ -67,3 +67,9 @@ export enum VehicleOccupancyStatus {
   NO_DATA_AVAILABLE = 'NO_DATA_AVAILABLE',
   UNKNOWN = 'UNKNOWN',
 }
+
+/** Params untuk filter GET /vehicles (MBTA API) */
+export interface VehicleFilterParams {
+  filterRoute?: string;
+  filterTrip?: string;
+}

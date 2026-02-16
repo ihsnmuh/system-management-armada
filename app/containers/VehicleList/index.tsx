@@ -2,40 +2,30 @@
 
 import { useVehicles } from '@/hooks/queries/use-vehicles';
 import VehicleCard from '@/components/cards/vehicle';
+import ListPagination from '@/components/ListPagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Field, FieldLabel } from '@/components/ui/field';
-import { cn, generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
+import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
-
-const LIMIT_OPTIONS = [10, 30, 50, 100] as const;
+import VehicleFilter from '@/components/VehicleFilter';
 
 const ContainerVehicleList = () => {
   const [limitPerPage, setLimitPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
-  const [includeVehicles] = useState<string[]>(['route']);
+  const [includeVehicles] = useState<string[]>(['route', 'trip']);
+  const [appliedRouteIds, setAppliedRouteIds] = useState<string[]>([]);
+  const [appliedTripIds, setAppliedTripIds] = useState<string[]>([]);
 
   const { data, isLoading, isFetching } = useVehicles({
     limit: limitPerPage,
     offset: currentPage * limitPerPage,
     include: includeVehicles.join(','),
+    ...(appliedRouteIds.length > 0 && {
+      filterRoute: appliedRouteIds.join(','),
+    }),
+    ...(appliedTripIds.length > 0 && {
+      filterTrip: appliedTripIds.join(','),
+    }),
   });
 
   const isRefetching = isFetching && !isLoading;
@@ -62,6 +52,21 @@ const ContainerVehicleList = () => {
     setCurrentPage(0);
   };
 
+  const handleApplyFilter = (payload: {
+    routeIds: string[];
+    tripIds: string[];
+  }) => {
+    setAppliedRouteIds(payload.routeIds);
+    setAppliedTripIds(payload.tripIds);
+    setCurrentPage(0);
+  };
+
+  const handleResetFilter = () => {
+    setAppliedRouteIds([]);
+    setAppliedTripIds([]);
+    setCurrentPage(0);
+  };
+
   const vehicles = data?.data.map((vehicle) => {
     const routeId = vehicle.relationships.route.data?.id;
     const routeDetail = data?.included?.find(
@@ -76,7 +81,7 @@ const ContainerVehicleList = () => {
 
   return (
     <div className="layout relative flex flex-col gap-4">
-      {isRefetching && (
+      {/* {isRefetching && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-lg">
           <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -85,13 +90,31 @@ const ContainerVehicleList = () => {
             </p>
           </div>
         </div>
-      )}
+      )} */}
+
+      <VehicleFilter
+        onApplyFilter={handleApplyFilter}
+        onReset={handleResetFilter}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&
-          vehicles?.map((vehicle) => (
+          vehicles &&
+          vehicles.length > 0 &&
+          vehicles.map((vehicle) => (
             <VehicleCard key={vehicle.id} vehicle={vehicle} />
           ))}
+
+        {!isLoading && (!vehicles || vehicles.length === 0) && (
+          <div className="col-span-full min-h-dvh flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/30 px-4 py-12 text-center">
+            <p className="text-sm font-medium text-muted-foreground">
+              Tidak ada data kendaraan
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Coba ubah filter rute/trip atau tunggu sebentar.
+            </p>
+          </div>
+        )}
 
         {isLoading &&
           Array.from({ length: limitPerPage }).map((_, index) => (
@@ -101,91 +124,19 @@ const ContainerVehicleList = () => {
           ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border p-4">
-        {isLoading ? (
-          <>
-            <Skeleton className="h-9 w-64 bg-gray-200 rounded-md" />
-            <Skeleton className="h-9 w-72 bg-gray-200 rounded-md" />
-          </>
-        ) : (
-          <>
-            <Field orientation="horizontal" className="w-fit text-primary">
-              <FieldLabel htmlFor="select-rows-per-page">
-                {totalItems !== null
-                  ? `Menampilkan ${startItem} - ${endItem} dari ${totalItems} data`
-                  : `Menampilkan ${startItem} - ${endItem} data`}
-              </FieldLabel>
-              <Select
-                value={limitPerPage.toString()}
-                onValueChange={handleLimitChange}
-              >
-                <SelectTrigger className="w-20" id="select-rows-per-page">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectGroup>
-                    {LIMIT_OPTIONS.map((opt) => (
-                      <SelectItem key={opt} value={opt.toString()}>
-                        {opt}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Pagination className="w-fit mx-0 flex items-center justify-center">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => hasPrevPage && setCurrentPage((p) => p - 1)}
-                    className={cn(
-                      'cursor-pointer',
-                      !hasPrevPage && 'pointer-events-none opacity-50',
-                    )}
-                  />
-                </PaginationItem>
-
-                {pageNumbers ? (
-                  pageNumbers.map((page, idx) =>
-                    page === 'ellipsis' ? (
-                      <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          className="cursor-pointer"
-                          isActive={page === currentPage}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                    ),
-                  )
-                ) : (
-                  <PaginationItem>
-                    <PaginationLink isActive className="cursor-pointer">
-                      {currentPage + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                )}
-
-                <PaginationItem>
-                  <PaginationNext
-                    onClick={() => hasNextPage && setCurrentPage((p) => p + 1)}
-                    className={cn(
-                      'cursor-pointer',
-                      !hasNextPage && 'pointer-events-none opacity-50',
-                    )}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </>
-        )}
-      </div>
+      <ListPagination
+        isLoading={isLoading}
+        totalItems={totalItems}
+        startItem={startItem}
+        endItem={endItem}
+        limitPerPage={limitPerPage}
+        onLimitChange={handleLimitChange}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        hasPrevPage={hasPrevPage}
+        hasNextPage={hasNextPage}
+        pageNumbers={pageNumbers}
+      />
     </div>
   );
 };

@@ -5,15 +5,16 @@ import type {
   ApiListResponse,
   PaginationParams,
   FilterParams,
+  VehicleFilterParams,
 } from '@/types/api';
 
-// Endpoints
 const ENDPOINTS = {
   BASE: '/vehicles',
 } as const;
 
-// Helper: build query string dari params
-function buildQuery(params?: PaginationParams & FilterParams): string {
+type VehicleListParams = PaginationParams & FilterParams & VehicleFilterParams;
+
+function buildQuery(params?: VehicleListParams): string {
   if (!params) return '';
 
   const searchParams = new URLSearchParams();
@@ -30,19 +31,25 @@ function buildQuery(params?: PaginationParams & FilterParams): string {
     searchParams.set('include', params.include);
   }
 
+  if (params.filterRoute !== undefined) {
+    searchParams.set('filter[route]', params.filterRoute);
+  }
+
+  if (params.filterTrip !== undefined) {
+    searchParams.set('filter[trip]', params.filterTrip);
+  }
+
   const query = searchParams.toString();
   return query ? `?${query}` : '';
 }
 
-// Query Keys - include params supaya cache per-page
 export const vehicleKeys = {
   all: ['vehicles'] as const,
-  list: (params?: PaginationParams & FilterParams) => ['vehicles', 'list', params] as const,
+  list: (params?: VehicleListParams) => ['vehicles', 'list', params] as const,
 };
 
-// API Functions
 export const vehicleApi = {
-  getAll: (params?: PaginationParams & FilterParams) =>
+  getAll: (params?: VehicleListParams) =>
     apiClient<ApiListResponse<Vehicle, Route>>(
       `${ENDPOINTS.BASE}${buildQuery(params)}`,
     ),
