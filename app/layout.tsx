@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import 'leaflet/dist/leaflet.css';
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'sonner';
 
 const publicSans = Public_Sans({
   variable: '--font-public-sans',
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <Navbar />
+          <Toaster />
           <main>{children}</main>
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryProvider>
