@@ -5,7 +5,6 @@ import VehicleCard from '@/components/cards/vehicle';
 import ListPagination from '@/components/ListPagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import VehicleFilter from '@/components/VehicleFilter';
 import { DialogDetail } from '@/components/DialogDetail';
