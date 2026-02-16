@@ -1,28 +1,29 @@
 import { apiClient } from '../client';
 import type {
-  Trip,
+  Schedule,
   ApiListResponse,
   ApiDetailResponse,
   PaginationParams,
   FilterParams,
-  TripFilterParams,
-  TripDetailParams,
+  ScheduleFilterParams,
+  ScheduleDetailParams,
+  Stop,
 } from '@/types/api';
 
 const ENDPOINTS = {
-  BASE: '/trips',
+  BASE: '/schedules',
 } as const;
 
-type TripListParams = PaginationParams & FilterParams & TripFilterParams;
+type ScheduleListParams = PaginationParams & FilterParams & ScheduleFilterParams;
 
-function buildDetailQuery(params?: TripDetailParams): string {
+function buildDetailQuery(params?: ScheduleDetailParams): string {
   if (!params?.include) return '';
   const searchParams = new URLSearchParams();
   searchParams.set('include', params.include);
   return `?${searchParams.toString()}`;
 }
 
-function buildQuery(params?: TripListParams): string {
+function buildQuery(params?: ScheduleListParams): string {
   if (!params) return '';
 
   const searchParams = new URLSearchParams();
@@ -44,19 +45,23 @@ function buildQuery(params?: TripListParams): string {
   }
 
   if (params.fields !== undefined) {
-    searchParams.set('fields[trip]', params.fields);
+    searchParams.set('fields[schedule]', params.fields);
   }
 
   if (params.filterRoute !== undefined) {
     searchParams.set('filter[route]', params.filterRoute);
   }
 
-  if (params.filterDate !== undefined) {
-    searchParams.set('filter[date]', params.filterDate);
+  if (params.filterTrip !== undefined) {
+    searchParams.set('filter[trip]', params.filterTrip);
   }
 
-  if (params.filterId !== undefined) {
-    searchParams.set('filter[id]', params.filterId);
+  if (params.filterStop !== undefined) {
+    searchParams.set('filter[stop]', params.filterStop);
+  }
+
+  if (params.filterDate !== undefined) {
+    searchParams.set('filter[date]', params.filterDate);
   }
 
   if (params.filterDirectionId !== undefined) {
@@ -67,22 +72,25 @@ function buildQuery(params?: TripListParams): string {
   return query ? `?${query}` : '';
 }
 
-export const tripKeys = {
-  all: ['trips'] as const,
-  list: (params?: TripListParams) => ['trips', 'list', params] as const,
-  getById: (id: string, params?: TripDetailParams) =>
-    ['trips', 'getById', id, params] as const,
+export const scheduleKeys = {
+  all: ['schedules'] as const,
+  list: (params?: ScheduleListParams) => ['schedules', 'list', params] as const,
+  getById: (id: string, params?: ScheduleDetailParams) =>
+    ['schedules', 'getById', id, params] as const,
 };
 
-export const tripApi = {
-  getAll: (params?: TripListParams) =>
-    apiClient<ApiListResponse<Trip>>(
+const SCHEDULE_DETAIL_INCLUDE = 'stop';
+
+export const scheduleApi = {
+  getAll: (params?: ScheduleListParams) =>
+    apiClient<ApiListResponse<Schedule, Stop>>(
       `${ENDPOINTS.BASE}${buildQuery(params)}`,
     ),
-  getById: (id: string, params?: TripDetailParams) =>
-    apiClient<ApiDetailResponse<Trip, Record<string, unknown>>>(
+  getById: (id: string, params?: ScheduleDetailParams) =>
+    apiClient<ApiDetailResponse<Schedule, Record<string, unknown>>>(
       `${ENDPOINTS.BASE}/${id}${buildDetailQuery(
-        params ?? { include: 'shape,stop' },
+        params ?? { include: SCHEDULE_DETAIL_INCLUDE },
       )}`,
     ),
 };
+

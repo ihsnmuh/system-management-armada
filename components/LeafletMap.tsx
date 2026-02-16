@@ -11,6 +11,7 @@ import type {
   PolylineProps,
   PopupProps,
   TileLayerProps,
+  CircleMarkerProps,
 } from 'react-leaflet';
 
 const MapContainer = dynamic(
@@ -29,6 +30,10 @@ const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), {
 const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), {
   ssr: false,
 }) as unknown as ComponentType<PolylineProps>;
+const CircleMarker = dynamic(
+  () => import('react-leaflet').then((m) => m.CircleMarker),
+  { ssr: false },
+) as unknown as ComponentType<CircleMarkerProps>;
 
 export interface LeafletMapMarker {
   id: string;
@@ -41,6 +46,7 @@ interface LeafletMapProps {
   zoom?: number;
   markers?: LeafletMapMarker[];
   shapeCoordinates?: [number, number][];
+  schedulePoints?: [number, number][];
   className?: string;
   tileUrl?: string;
   tileAttribution?: string;
@@ -55,6 +61,7 @@ function LeafletMap({
   zoom = 13,
   markers,
   shapeCoordinates,
+  schedulePoints,
   className,
   tileUrl = DEFAULT_TILE_URL,
   tileAttribution = DEFAULT_TILE_ATTRIBUTION,
@@ -102,6 +109,11 @@ function LeafletMap({
     return [];
   }, [shapeCoordinates]);
 
+  const resolvedSchedulePoints = useMemo(() => {
+    if (schedulePoints && schedulePoints.length > 0) return schedulePoints;
+    return [];
+  }, [schedulePoints]);
+
   if (!center) {
     return (
       <div
@@ -132,6 +144,19 @@ function LeafletMap({
         {resolvedShapeCoordinates.length > 0 && (
           <Polyline pathOptions={{ color: 'blue' }} positions={resolvedShapeCoordinates} />
         )}
+        {resolvedSchedulePoints.map((point, index) => (
+          <CircleMarker
+            key={`schedule-point-${index}`}
+            center={point}
+            radius={4}
+            pathOptions={{
+              color: '#4b5563',
+              weight: 2,
+              fillColor: '#ffffff',
+              fillOpacity: 1,
+            }}
+          />
+        ))}
       </MapContainer>
     </div>
   );

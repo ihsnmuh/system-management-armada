@@ -32,6 +32,7 @@ import type {
 import LeafletMap from './LeafletMap';
 import { useTripDetail } from '@/hooks/queries/use-trips';
 import { decodeMBTAPolyline } from '@/lib/decodepolymap';
+import { useSchedules } from '@/hooks/queries/use-schedules';
 
 function bearingToDirection(bearing: number | null): string {
     if (bearing === null) return '—';
@@ -153,6 +154,54 @@ export function DialogDetail({
               ])
             : null;
 
+    const {data: scheduleDetail} = useSchedules(
+        tripDetail?.id
+            ? {
+                  filterTrip: tripDetail.id,
+                  include: 'stop',
+                  limit: 50,
+              }
+            : undefined,
+    );
+
+    const schedules = scheduleDetail?.data ?? [];
+
+    const includedScheduleStops = (scheduleDetail?.included ?? []).filter(
+        (item): item is Stop =>
+            item.type === 'stop' && 'attributes' in item,
+    );
+
+    const scheduleStopById = new Map(
+        includedScheduleStops.map((stop) => [stop.id, stop]),
+    );
+
+    const scheduleCoordinates: [number, number][] = schedules
+        .slice()
+        .sort(
+            (a, b) =>
+                (a.attributes.stop_sequence ?? 0) -
+                (b.attributes.stop_sequence ?? 0),
+        )
+        .map((schedule) => {
+            const scheduleStopId = schedule.relationships.stop.data?.id;
+            if (!scheduleStopId) return null;
+
+            // Hindari menimpa marker halte utama supaya popup tetap bisa diklik
+            if (scheduleStopId === stopId) return null;
+
+            const scheduleStop = scheduleStopById.get(scheduleStopId);
+            if (!scheduleStop) return null;
+
+            const lat = scheduleStop.attributes.latitude;
+            const lng = scheduleStop.attributes.longitude;
+            if (lat == null || lng == null) return null;
+
+            return [lat, lng] as [number, number];
+        })
+        .filter(
+            (coord): coord is [number, number] => coord !== null,
+        );
+
     const {data: tripDetailWithShape} = useTripDetail(tripDetail?.id ?? '', { include: 'shape' });
     const shape = tripDetailWithShape?.included?.find(
         (item) => item.type === 'shape',
@@ -160,7 +209,13 @@ export function DialogDetail({
     const polyline = shape?.attributes.polyline ?? null;
     const shapeCoordinates = polyline ? decodeMBTAPolyline(polyline) : [];
 
-    const mapCenter = vehiclePosition ?? stopPosition ?? shapeCoordinates[0] ?? null;
+    const mapCenter =
+        vehiclePosition ??
+        stopPosition ??
+        shapeCoordinates[0] ??
+        scheduleCoordinates[0] ??
+        null;
+
     const mapMarkers = [
         ...(vehiclePosition
             ? [
@@ -432,6 +487,7 @@ export function DialogDetail({
                                         zoom={15}
                                         markers={mapMarkers}
                                         shapeCoordinates={shapeCoordinates}
+                                        schedulePoints={scheduleCoordinates}
                                     />
                                 </div>
 

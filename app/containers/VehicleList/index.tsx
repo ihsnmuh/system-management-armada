@@ -60,7 +60,7 @@ const ContainerVehicleList = () => {
     isFetching: isVehicleDetailFetching,
     isRefetching: isVehicleDetailRefetching,
     refetch: refetchVehicleDetail,
-  } = useVehicleById(selectedVehicle.id);
+  } = useVehicleById(selectedVehicle.id, { include: 'route,trip,stop' });
 
   const handleLimitChange = (value: string) => {
     setLimitPerPage(Number(value));

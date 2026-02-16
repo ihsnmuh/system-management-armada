@@ -3,3 +3,4 @@ export * from './vehicles';
 export * from './routes';
 export * from './trips';
 export * from './stops';
+export * from './schedules';
