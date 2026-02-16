@@ -8,7 +8,10 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { VehicleCurrentStatus, VehicleOccupancyStatus } from '@/types/api/vehicles';
+import {
+    VehicleCurrentStatus,
+    VehicleOccupancyStatus,
+} from '@/types/api/vehicles';
 import { Button } from '@/components/ui/button';
 import {
     Bus,
@@ -61,19 +64,47 @@ interface DialogDetailProps {
     onRefresh?: () => void;
 }
 
-function DataRow({
-    label,
-    value,
-}: {
-    label: string;
-    value: React.ReactNode;
-}) {
+function DataRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
         <div className="space-y-0.5">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {label}
             </p>
             <p className="text-sm">{value ?? '—'}</p>
+        </div>
+    );
+}
+
+function DialogDetailSkeleton() {
+    return (
+        <div className="px-6 py-4">
+            <div className="space-y-4 animate-pulse">
+                <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-muted" />
+                    <div className="space-y-2 flex-1">
+                        <div className="h-4 w-32 rounded bg-muted" />
+                        <div className="h-3 w-40 rounded bg-muted" />
+                    </div>
+                    <div className="h-6 w-20 rounded-full bg-muted" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <div className="h-3 w-24 rounded bg-muted" />
+                        <div className="h-3 w-32 rounded bg-muted" />
+                        <div className="h-3 w-28 rounded bg-muted" />
+                        <div className="h-3 w-20 rounded bg-muted" />
+                    </div>
+                    <div className="space-y-2">
+                        <div className="h-3 w-28 rounded bg-muted" />
+                        <div className="h-3 w-24 rounded bg-muted" />
+                        <div className="h-3 w-32 rounded bg-muted" />
+                        <div className="h-3 w-20 rounded bg-muted" />
+                    </div>
+                </div>
+
+                <div className="h-64 w-full rounded-lg bg-muted" />
+            </div>
         </div>
     );
 }
@@ -99,7 +130,6 @@ export function DialogDetail({
             item.type === 'route' && 'attributes' in item && item.id === routeId,
     );
     const colorRoute = routeDetail?.attributes?.color;
-    console.log(routeDetail);
     const tripDetail = included.find(
         (item): item is Trip =>
             item.type === 'trip' && 'attributes' in item && item.id === tripId,
@@ -115,16 +145,16 @@ export function DialogDetail({
     const updatedAt = attrs?.updated_at;
     const lastUpdatedFormatted = updatedAt
         ? new Date(updatedAt).toLocaleTimeString('id-ID', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: false,
-          }) + ' WIB'
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }) + ' WIB'
         : '—';
 
-    const speedKmh =
-        attrs?.speed != null ? Math.round(attrs.speed * 3.6) : null;
+    const speedKmh = attrs?.speed != null ? Math.round(attrs.speed * 3.6) : null;
 
-    const directionId = attrs?.direction_id ?? tripDetail?.attributes?.direction_id;
+    const directionId =
+        attrs?.direction_id ?? tripDetail?.attributes?.direction_id;
     const directionLabel =
         directionId != null && routeDetail?.attributes?.direction_names?.length
             ? routeDetail.attributes.direction_names[directionId]
@@ -137,28 +167,27 @@ export function DialogDetail({
 
     const stopPosition =
         stopDetail?.attributes?.latitude != null &&
-        stopDetail?.attributes?.longitude != null
+            stopDetail?.attributes?.longitude != null
             ? ([stopDetail.attributes.latitude, stopDetail.attributes.longitude] as [
-                  number,
-                  number,
-              ])
+                number,
+                number,
+            ])
             : null;
 
-    const {data: scheduleDetail} = useSchedules(
+    const { data: scheduleDetail } = useSchedules(
         tripDetail?.id
             ? {
-                  filterTrip: tripDetail.id,
-                  include: 'stop',
-                  limit: 50,
-              }
+                filterTrip: tripDetail.id,
+                include: 'stop',
+                limit: 50,
+            }
             : undefined,
     );
 
     const schedules = scheduleDetail?.data ?? [];
 
     const includedScheduleStops = (scheduleDetail?.included ?? []).filter(
-        (item): item is Stop =>
-            item.type === 'stop' && 'attributes' in item,
+        (item): item is Stop => item.type === 'stop' && 'attributes' in item,
     );
 
     const scheduleStopById = new Map(
@@ -169,8 +198,7 @@ export function DialogDetail({
         .slice()
         .sort(
             (a, b) =>
-                (a.attributes.stop_sequence ?? 0) -
-                (b.attributes.stop_sequence ?? 0),
+                (a.attributes.stop_sequence ?? 0) - (b.attributes.stop_sequence ?? 0),
         )
         .map((schedule) => {
             const scheduleStopId = schedule.relationships.stop.data?.id;
@@ -188,11 +216,11 @@ export function DialogDetail({
 
             return [lat, lng] as [number, number];
         })
-        .filter(
-            (coord): coord is [number, number] => coord !== null,
-        );
+        .filter((coord): coord is [number, number] => coord !== null);
 
-    const {data: tripDetailWithShape} = useTripDetail(tripDetail?.id ?? '', { include: 'shape' });
+    const { data: tripDetailWithShape } = useTripDetail(tripDetail?.id ?? '', {
+        include: 'shape',
+    });
     const shape = tripDetailWithShape?.included?.find(
         (item) => item.type === 'shape',
     ) as { attributes: { polyline: string } } | undefined;
@@ -209,30 +237,19 @@ export function DialogDetail({
     const mapMarkers = [
         ...(vehiclePosition
             ? [
-                  {
-                      id: 'vehicle',
-                      position: vehiclePosition,
-                      popup: attrs?.label ? `Kendaraan: ${attrs.label}` : 'Kendaraan',
-                  },
-              ]
+                {
+                    id: 'vehicle',
+                    position: vehiclePosition,
+                    popup: attrs?.label ? `Kendaraan: ${attrs.label}` : 'Kendaraan',
+                },
+            ]
             : []),
-        // ...(stopPosition
-        //     ? [
-        //           {
-        //               id: 'stop',
-        //               position: stopPosition,
-        //               popup: stopDetail?.attributes?.name
-        //                   ? `Halte: ${stopDetail.attributes.name}`
-        //                   : 'Halte',
-        //           },
-        //       ]
-        //     : []),
     ];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
-                className="sm:max-w-5xl gap-0 p-0"
+                className="sm:max-w-2xl md:max-w-3xl lg:max-w-5xl gap-0 p-0"
                 closeOnClickOutside={false}
             >
                 {/* Header */}
@@ -241,11 +258,10 @@ export function DialogDetail({
                         <div className="flex items-center gap-2">
                             {routeType === 0 || routeType === 1 || routeType === 2 ? (
                                 <span
-                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-                                        routeType === 2
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${routeType === 2
                                             ? 'bg-purple-600 text-white'
                                             : 'bg-slate-600 text-white'
-                                    }`}
+                                        }`}
                                 >
                                     <Train className="size-5" />
                                 </span>
@@ -255,11 +271,10 @@ export function DialogDetail({
                                 </span>
                             ) : (
                                 <span
-                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
-                                        routeType === 3
+                                    className={`flex size-8 shrink-0 items-center justify-center rounded-full ${routeType === 3
                                             ? 'bg-amber-400 text-black'
                                             : 'bg-teal-500 text-black'
-                                    }`}
+                                        }`}
                                 >
                                     <Bus className="size-5" />
                                 </span>
@@ -268,9 +283,7 @@ export function DialogDetail({
                                 {attrs?.label ?? (isBusy ? 'Memuat...' : '—')}
                             </DialogTitle>
                             <BadgeCustom
-                                currentStatus={
-                                    attrs?.current_status as VehicleCurrentStatus
-                                }
+                                currentStatus={attrs?.current_status as VehicleCurrentStatus}
                             />
                         </div>
                         {vehicleDetail?.data && (
@@ -308,38 +321,27 @@ export function DialogDetail({
                                         Informasi Kendaraan
                                     </h3>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <DataRow label="Vehicle ID" value={vehicleDetail?.data?.id} />
+                                        <DataRow
+                                            label="Vehicle ID"
+                                            value={vehicleDetail?.data?.id}
+                                        />
                                         <DataRow label="Label" value={attrs?.label} />
                                         <DataRow
                                             label="Occupancy"
-                                            value={occupancyLabel(
-                                                attrs?.occupancy_status ?? null,
-                                            )}
+                                            value={occupancyLabel(attrs?.occupancy_status ?? null)}
                                         />
                                         <DataRow label="Revenue" value={attrs?.revenue} />
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <DataRow
-                                            label="Latitude"
-                                            value={attrs?.latitude}
-                                        />
-                                        <DataRow
-                                            label="Longitude"
-                                            value={attrs?.longitude}
-                                        />
+                                        <DataRow label="Latitude" value={attrs?.latitude} />
+                                        <DataRow label="Longitude" value={attrs?.longitude} />
                                         <DataRow
                                             label="Speed"
-                                            value={
-                                                speedKmh != null
-                                                    ? `${speedKmh} km/h`
-                                                    : '—'
-                                            }
+                                            value={speedKmh != null ? `${speedKmh} km/h` : '—'}
                                         />
                                         <DataRow
                                             label="Bearing"
-                                            value={bearingToDirection(
-                                                attrs?.bearing ?? null,
-                                            )}
+                                            value={bearingToDirection(attrs?.bearing ?? null)}
                                         />
                                         <DataRow
                                             label="Stop Sequence"
@@ -369,11 +371,9 @@ export function DialogDetail({
                                                     className="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium text-white border-none"
                                                     style={{
                                                         backgroundColor: `#${routeDetail.attributes.color || '000000'}`,
-                                                        color:
-                                                            routeDetail.attributes
-                                                                .text_color
-                                                                ? `#${routeDetail.attributes.text_color}`
-                                                                : undefined,
+                                                        color: routeDetail.attributes.text_color
+                                                            ? `#${routeDetail.attributes.text_color}`
+                                                            : undefined,
                                                     }}
                                                 >
                                                     {routeDetail.attributes.short_name}
@@ -384,26 +384,20 @@ export function DialogDetail({
                                             </div>
                                             <DataRow
                                                 label="Deskripsi"
-                                                value={
-                                                    routeDetail.attributes
-                                                        .description
-                                                }
+                                                value={routeDetail.attributes.description}
                                             />
                                             <DataRow
                                                 label="Fare Class"
-                                                value={
-                                                    routeDetail.attributes
-                                                        .fare_class
-                                                }
+                                                value={routeDetail.attributes.fare_class}
                                             />
                                             <div className="space-y-0.5">
                                                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                                     Tujuan per Arah
                                                 </p>
                                                 <p className="text-sm">
-                                                    {routeDetail.attributes
-                                                        .direction_destinations
-                                                        ?.join(' ↔ ') ?? '—'}
+                                                    {routeDetail.attributes.direction_destinations?.join(
+                                                        ' ↔ ',
+                                                    ) ?? '—'}
                                                 </p>
                                             </div>
                                         </div>
@@ -417,46 +411,33 @@ export function DialogDetail({
                                             Informasi Perjalanan
                                         </h3>
                                         <div className="grid grid-cols-2 gap-3">
-                                            <DataRow
-                                                label="Trip ID"
-                                                value={tripDetail.id}
-                                            />
+                                            <DataRow label="Trip ID" value={tripDetail.id} />
                                             <DataRow
                                                 label="Headsign"
-                                                value={
-                                                    tripDetail.attributes
-                                                        .headsign
-                                                }
+                                                value={tripDetail.attributes.headsign}
                                             />
                                             <DataRow
                                                 label="Block ID"
-                                                value={
-                                                    tripDetail.attributes
-                                                        .block_id
-                                                }
+                                                value={tripDetail.attributes.block_id}
                                             />
                                             <DataRow
                                                 label="Wheelchair"
                                                 value={
-                                                    tripDetail.attributes
-                                                        .wheelchair_accessible === 1
+                                                    tripDetail.attributes.wheelchair_accessible === 1
                                                         ? 'Ya'
-                                                        : tripDetail.attributes
-                                                              .wheelchair_accessible === 2
-                                                          ? 'Tidak'
-                                                          : '—'
+                                                        : tripDetail.attributes.wheelchair_accessible === 2
+                                                            ? 'Tidak'
+                                                            : '—'
                                                 }
                                             />
                                             <DataRow
                                                 label="Sepeda Diizinkan"
                                                 value={
-                                                    tripDetail.attributes
-                                                        .bikes_allowed === 1
+                                                    tripDetail.attributes.bikes_allowed === 1
                                                         ? 'Ya'
-                                                        : tripDetail.attributes
-                                                              .bikes_allowed === 2
-                                                          ? 'Tidak'
-                                                          : '—'
+                                                        : tripDetail.attributes.bikes_allowed === 2
+                                                            ? 'Tidak'
+                                                            : '—'
                                                 }
                                             />
                                         </div>
@@ -496,58 +477,38 @@ export function DialogDetail({
                                             />
                                             <DataRow
                                                 label="Deskripsi"
-                                                value={
-                                                    stopDetail.attributes
-                                                        .description
-                                                }
+                                                value={stopDetail.attributes.description}
                                             />
                                             <DataRow
                                                 label="Jalan"
-                                                value={
-                                                    stopDetail.attributes
-                                                        .on_street
-                                                }
+                                                value={stopDetail.attributes.on_street}
                                             />
                                             <DataRow
                                                 label="Peron"
-                                                value={
-                                                    stopDetail.attributes
-                                                        .platform_name
-                                                }
+                                                value={stopDetail.attributes.platform_name}
                                             />
                                             <DataRow
                                                 label="Kotamadya"
-                                                value={
-                                                    stopDetail.attributes
-                                                        .municipality
-                                                }
+                                                value={stopDetail.attributes.municipality}
                                             />
                                             <div className="grid grid-cols-2 gap-3 pt-1">
                                                 <DataRow
                                                     label="Lat"
-                                                    value={
-                                                        stopDetail.attributes
-                                                            .latitude
-                                                    }
+                                                    value={stopDetail.attributes.latitude}
                                                 />
                                                 <DataRow
                                                     label="Lon"
-                                                    value={
-                                                        stopDetail.attributes
-                                                            .longitude
-                                                    }
+                                                    value={stopDetail.attributes.longitude}
                                                 />
                                             </div>
                                             <DataRow
                                                 label="Wheelchair Boarding"
                                                 value={
-                                                    stopDetail.attributes
-                                                        .wheelchair_boarding === 1
+                                                    stopDetail.attributes.wheelchair_boarding === 1
                                                         ? 'Ya'
-                                                        : stopDetail.attributes
-                                                              .wheelchair_boarding === 2
-                                                          ? 'Tidak'
-                                                          : '—'
+                                                        : stopDetail.attributes.wheelchair_boarding === 2
+                                                            ? 'Tidak'
+                                                            : '—'
                                                 }
                                             />
                                         </div>
@@ -556,9 +517,7 @@ export function DialogDetail({
                             </div>
                         </div>
                     ) : (
-                        <div className="py-8 text-center text-muted-foreground text-sm">
-                            Memuat detail kendaraan...
-                        </div>
+                        <DialogDetailSkeleton />
                     )}
                 </div>
 

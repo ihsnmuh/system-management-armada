@@ -3,13 +3,13 @@
 import { useVehicleById, useVehicles } from '@/hooks/queries/use-vehicles';
 import VehicleCard from '@/components/cards/vehicle';
 import ListPagination from '@/components/ListPagination';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import VehicleFilter from '@/components/VehicleFilter';
 import { DialogDetail } from '@/components/DialogDetail';
+import { toast } from 'sonner';
 
 const ContainerVehicleList = () => {  
   const [limitPerPage, setLimitPerPage] = useState(10);
@@ -100,22 +100,30 @@ const ContainerVehicleList = () => {
     };
   });
 
+  const refetchToastId = useRef<string | number | null>(null);
+
+  useEffect(() => {
+    if (isRefetching) {
+      if (!refetchToastId.current) {
+        refetchToastId.current = toast.loading('Memperbarui data kendaraan...', {
+          position: 'top-center',
+        });
+      }
+    } else if (refetchToastId.current) {
+      toast.success('Data kendaraan berhasil diperbarui.', {
+        id: refetchToastId.current,
+        position: 'top-center',
+      });
+      refetchToastId.current = null;
+    }
+  }, [isRefetching]);
+
   return (
     <div className="layout relative flex flex-col gap-4">
       <VehicleFilter
         onApplyFilter={handleApplyFilter}
         onReset={handleResetFilter}
       />
-
-      {isRefetching && (
-        <Badge
-          variant="secondary"
-          className="w-fit gap-1.5 py-1.5 px-3 font-normal"
-        >
-          <Loader2 className="size-3.5 animate-spin shrink-0" />
-          {'Memperbarui data...'}
-        </Badge>
-      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&
