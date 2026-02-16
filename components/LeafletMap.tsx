@@ -8,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import type {
   MapContainerProps,
   MarkerProps,
+  PolylineProps,
   PopupProps,
   TileLayerProps,
 } from 'react-leaflet';
@@ -25,6 +26,9 @@ const Marker = dynamic(() => import('react-leaflet').then((m) => m.Marker), {
 const Popup = dynamic(() => import('react-leaflet').then((m) => m.Popup), {
   ssr: false,
 }) as unknown as ComponentType<PopupProps>;
+const Polyline = dynamic(() => import('react-leaflet').then((m) => m.Polyline), {
+  ssr: false,
+}) as unknown as ComponentType<PolylineProps>;
 
 export interface LeafletMapMarker {
   id: string;
@@ -36,6 +40,7 @@ interface LeafletMapProps {
   center?: LatLngExpression | null;
   zoom?: number;
   markers?: LeafletMapMarker[];
+  shapeCoordinates?: [number, number][];
   className?: string;
   tileUrl?: string;
   tileAttribution?: string;
@@ -49,6 +54,7 @@ function LeafletMap({
   center,
   zoom = 13,
   markers,
+  shapeCoordinates,
   className,
   tileUrl = DEFAULT_TILE_URL,
   tileAttribution = DEFAULT_TILE_ATTRIBUTION,
@@ -91,6 +97,11 @@ function LeafletMap({
     ] satisfies LeafletMapMarker[];
   }, [center, markers]);
 
+  const resolvedShapeCoordinates = useMemo(() => {
+    if (shapeCoordinates && shapeCoordinates.length > 0) return shapeCoordinates;
+    return [];
+  }, [shapeCoordinates]);
+
   if (!center) {
     return (
       <div
@@ -118,6 +129,9 @@ function LeafletMap({
             {m.popup ? <Popup>{m.popup}</Popup> : null}
           </Marker>
         ))}
+        {resolvedShapeCoordinates.length > 0 && (
+          <Polyline pathOptions={{ color: 'blue' }} positions={resolvedShapeCoordinates} />
+        )}
       </MapContainer>
     </div>
   );

@@ -2,9 +2,11 @@ import { apiClient } from '../client';
 import type {
   Trip,
   ApiListResponse,
+  ApiDetailResponse,
   PaginationParams,
   FilterParams,
   TripFilterParams,
+  TripDetailParams,
 } from '@/types/api';
 
 const ENDPOINTS = {
@@ -12,6 +14,13 @@ const ENDPOINTS = {
 } as const;
 
 type TripListParams = PaginationParams & FilterParams & TripFilterParams;
+
+function buildDetailQuery(params?: TripDetailParams): string {
+  if (!params?.include) return '';
+  const searchParams = new URLSearchParams();
+  searchParams.set('include', params.include);
+  return `?${searchParams.toString()}`;
+}
 
 function buildQuery(params?: TripListParams): string {
   if (!params) return '';
@@ -61,11 +70,19 @@ function buildQuery(params?: TripListParams): string {
 export const tripKeys = {
   all: ['trips'] as const,
   list: (params?: TripListParams) => ['trips', 'list', params] as const,
+  getById: (id: string, params?: TripDetailParams) =>
+    ['trips', 'getById', id, params] as const,
 };
 
 export const tripApi = {
   getAll: (params?: TripListParams) =>
     apiClient<ApiListResponse<Trip>>(
       `${ENDPOINTS.BASE}${buildQuery(params)}`,
+    ),
+  getById: (id: string, params?: TripDetailParams) =>
+    apiClient<ApiDetailResponse<Trip, Record<string, unknown>>>(
+      `${ENDPOINTS.BASE}/${id}${buildDetailQuery(
+        params ?? { include: 'shape' },
+      )}`,
     ),
 };

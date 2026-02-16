@@ -30,6 +30,8 @@ import type {
     Vehicle,
 } from '@/types/api';
 import LeafletMap from './LeafletMap';
+import { useTripDetail } from '@/hooks/queries/use-trips';
+import { decodeMBTAPolyline } from '@/lib/decodepolymap';
 
 function bearingToDirection(bearing: number | null): string {
     if (bearing === null) return '—';
@@ -137,10 +139,55 @@ export function DialogDetail({
             ? routeDetail.attributes.direction_names[directionId]
             : null;
 
+    const vehiclePosition =
+        attrs?.latitude != null && attrs?.longitude != null
+            ? ([attrs.latitude, attrs.longitude] as [number, number])
+            : null;
+
+    const stopPosition =
+        stopDetail?.attributes?.latitude != null &&
+        stopDetail?.attributes?.longitude != null
+            ? ([stopDetail.attributes.latitude, stopDetail.attributes.longitude] as [
+                  number,
+                  number,
+              ])
+            : null;
+
+    const {data: tripDetailWithShape} = useTripDetail(tripDetail?.id ?? '', { include: 'shape' });
+    const shape = tripDetailWithShape?.included?.find(
+        (item) => item.type === 'shape',
+    ) as { attributes: { polyline: string } } | undefined;
+    const polyline = shape?.attributes.polyline ?? null;
+    const shapeCoordinates = polyline ? decodeMBTAPolyline(polyline) : [];
+
+    const mapCenter = vehiclePosition ?? stopPosition ?? shapeCoordinates[0] ?? null;
+    const mapMarkers = [
+        ...(vehiclePosition
+            ? [
+                  {
+                      id: 'vehicle',
+                      position: vehiclePosition,
+                      popup: attrs?.label ? `Kendaraan: ${attrs.label}` : 'Kendaraan',
+                  },
+              ]
+            : []),
+        ...(stopPosition
+            ? [
+                  {
+                      id: 'stop',
+                      position: stopPosition,
+                      popup: stopDetail?.attributes?.name
+                          ? `Halte: ${stopDetail.attributes.name}`
+                          : 'Halte',
+                  },
+              ]
+            : []),
+    ];
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent
-                className="sm:max-w-2xl gap-0 p-0"
+                className="sm:max-w-5xl gap-0 p-0"
                 closeOnClickOutside={false}
             >
                 {/* Header */}
@@ -374,12 +421,26 @@ export function DialogDetail({
 
                             {/* Right column */}
                             <div className="flex flex-col gap-4">
+                                {/* Map */}
+                                <div className="flex flex-col gap-2">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                        Lokasi Real-Time
+                                    </p>
+                                    <LeafletMap
+                                        className="h-[520px]"
+                                        center={mapCenter}
+                                        zoom={15}
+                                        markers={mapMarkers}
+                                        shapeCoordinates={shapeCoordinates}
+                                    />
+                                </div>
+
                                 {/* Informasi Halte */}
                                 {stopDetail && (
                                     <div className="space-y-3">
                                         <h3 className="text-sm font-semibold flex items-center gap-2">
                                             <MapPin className="size-4" />
-                                            Informasi Halte
+                                            Informasi Halte Selanjutnya
                                         </h3>
                                         <div className="rounded-lg border p-3 space-y-2">
                                             <DataRow
@@ -445,25 +506,6 @@ export function DialogDetail({
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Map placeholder */}
-                                <div className="flex flex-col gap-2">
-                                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                        Lokasi Real-Time
-                                    </p>
-                                    <div className="min-h-[200px] rounded-lg border border-dashed bg-muted/30">
-                                    <LeafletMap 
-                                        center={[stopDetail?.attributes?.latitude ?? 0, stopDetail?.attributes?.longitude ?? 0]} 
-                                        zoom={13} 
-                                        markers={[
-                                            {
-                                                id: 'center',
-                                                position: [stopDetail?.attributes?.latitude ?? 0, stopDetail?.attributes?.longitude ?? 0],
-                                            },
-                                        ]}
-                                    />
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     ) : (

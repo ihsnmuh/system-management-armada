@@ -5,6 +5,7 @@ import type {
   PaginationParams,
   TripFilterParams,
   Trip,
+  TripDetailParams,
 } from '@/types/api';
 
 type TripListParams = PaginationParams & FilterParams & TripFilterParams;
@@ -15,6 +16,14 @@ export function useTrips(params?: TripListParams) {
   return useQuery({
     queryKey: tripKeys.list(params),
     queryFn: () => tripApi.getAll(params),
+  });
+}
+
+export function useTripDetail(id: string, params?: TripDetailParams) {
+  return useQuery({
+    queryKey: tripKeys.getById(id, params),
+    queryFn: () => tripApi.getById(id, params),
+    enabled: !!id,
   });
 }
 
