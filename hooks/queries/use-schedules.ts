@@ -13,6 +13,7 @@ export function useSchedules(params?: ScheduleListParams) {
   return useQuery({
     queryKey: scheduleKeys.list(params),
     queryFn: () => scheduleApi.getAll(params),
+    enabled: !!params?.filterTrip,
   });
 }
 
