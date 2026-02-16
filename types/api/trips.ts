@@ -42,3 +42,8 @@ export interface TripFilterParams {
   filterId?: string;
   filterDirectionId?: string;
 }
+
+/** Params untuk GET /trips/:id (detail) — include relationship (mis. shape) */
+export interface TripDetailParams {
+  include?: string;
+}

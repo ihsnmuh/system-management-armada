@@ -2,10 +2,8 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card';
 import { Vehicle, Route as RouteType } from '@/types/api';
 import { Badge } from '../ui/badge';
-import {
-  VehicleCurrentStatus,
-  VehicleOccupancyStatus,
-} from '@/types/api/vehicles';
+import { VehicleOccupancyStatus } from '@/types/api/vehicles';
+import BadgeCustom from '../BadgeCustom';
 
 export type VehicleWithRoute = Vehicle & {
   routeDetail: RouteType | null;
@@ -14,24 +12,6 @@ export type VehicleWithRoute = Vehicle & {
 import { MapPin, Route, Clock, Eye, PersonStanding } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TypographyH3 } from '../Typography';
-
-const STATUS_CONFIG = {
-  [VehicleCurrentStatus.IN_TRANSIT_TO]: {
-    label: 'In Transit',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    dot: 'bg-emerald-500',
-  },
-  [VehicleCurrentStatus.STOPPED_AT]: {
-    label: 'Stopped',
-    badge: 'bg-amber-50 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
-  },
-  [VehicleCurrentStatus.INCOMING_AT]: {
-    label: 'At Terminal',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200',
-    dot: 'bg-blue-500',
-  },
-} as const;
 
 const OCCUPANCY_STATUS_CONFIG = {
   [VehicleOccupancyStatus.MANY_SEATS_AVAILABLE]: {
@@ -51,37 +31,8 @@ const OCCUPANCY_STATUS_CONFIG = {
   },
 } as const;
 
-const DEFAULT_STATUS = {
-  label: 'Unknown',
-  badge: 'bg-gray-50 text-gray-700 border-gray-200',
-  dot: 'bg-gray-400',
-};
-
-const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
+const VehicleCard = ({ vehicle, onViewDetail }: { vehicle: VehicleWithRoute, onViewDetail: (id: string) => void }) => {
   const { attributes, relationships, routeDetail } = vehicle;
-
-  const status =
-    STATUS_CONFIG[attributes.current_status as VehicleCurrentStatus] ??
-    DEFAULT_STATUS;
-
-//   const updatedAt = useMemo(() => {
-//     if (!attributes.updated_at) return null;
-
-//     const now = new Date();
-//     const date = new Date(attributes.updated_at);
-//     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-//     if (diffInSeconds < 60) return 'Just now';
-
-//     const diffInMinutes = Math.floor(diffInSeconds / 60);
-//     if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-
-//     const diffInHours = Math.floor(diffInMinutes / 60);
-//     if (diffInHours < 24) return `${diffInHours} hours ago`;
-
-//     const diffInDays = Math.floor(diffInHours / 24);
-//     return `${diffInDays} days ago`;
-//   }, [attributes.updated_at]);
 
   const updatedAtTimeOnly = useMemo(() => {
     if (!attributes.updated_at) return null;
@@ -107,20 +58,7 @@ const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
           <TypographyH3 className="text-primary tracking-tight font-bold">
             {attributes.label}
           </TypographyH3>
-          <Badge
-            variant="outline"
-            className={`${status.badge} shrink-0 flex justify-center items-center`}
-          >
-            <span className="relative mr-1.5 flex h-2 w-2">
-              <span
-                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${status.dot}`}
-              />
-              <span
-                className={`relative inline-flex h-2 w-2 rounded-full ${status.dot}`}
-              />
-            </span>
-            {status.label.toUpperCase()}
-          </Badge>
+          <BadgeCustom currentStatus={attributes.current_status} />
         </div>
 
         {relationships.route?.data?.id && (
@@ -200,9 +138,9 @@ const VehicleCard = ({ vehicle }: { vehicle: VehicleWithRoute }) => {
       </CardContent>
 
       <CardFooter className="flex justify-end">
-        <Button variant="outline" size="sm" className="cursor-pointer">
+        <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => onViewDetail(vehicle.id)}>
           <Eye className="h-4 w-4" />
-          View
+          Lihat Detail
         </Button>
       </CardFooter>
     </Card>

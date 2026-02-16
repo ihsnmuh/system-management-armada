@@ -4,6 +4,7 @@ import { vehicleApi, vehicleKeys } from '@/lib/api/endpoints/vehicles';
 import type {
   FilterParams,
   PaginationParams,
+  VehicleDetailParams,
   VehicleFilterParams,
 } from '@/types/api';
 import type { Trip } from '@/types/api';
@@ -15,6 +16,15 @@ export function useVehicles(params?: UseVehiclesParams) {
     queryKey: vehicleKeys.list(params),
     queryFn: () => vehicleApi.getAll(params),
     refetchInterval: 0.5 * 60 * 1000, // refetch setiap 0.5 menit
+  });
+}
+
+export function useVehicleById(id: string, params?: VehicleDetailParams) {
+  return useQuery({
+    queryKey: vehicleKeys.getById(id, params),
+    queryFn: () => vehicleApi.getById(id, params),
+    enabled: !!id,
+    refetchInterval: 0.1 * 60 * 1000, // refetch setiap 0.1 menit
   });
 }
 

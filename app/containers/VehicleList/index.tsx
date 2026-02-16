@@ -1,20 +1,26 @@
 'use client';
 
-import { useVehicles } from '@/hooks/queries/use-vehicles';
+import { useVehicleById, useVehicles } from '@/hooks/queries/use-vehicles';
 import VehicleCard from '@/components/cards/vehicle';
 import ListPagination from '@/components/ListPagination';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import VehicleFilter from '@/components/VehicleFilter';
+import { DialogDetail } from '@/components/DialogDetail';
 
-const ContainerVehicleList = () => {
+const ContainerVehicleList = () => {  
   const [limitPerPage, setLimitPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(0);
   const [includeVehicles] = useState<string[]>(['route', 'trip']);
   const [appliedRouteIds, setAppliedRouteIds] = useState<string[]>([]);
   const [appliedTripIds, setAppliedTripIds] = useState<string[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState({
+    id: '',
+    isOpen: false,
+  });
 
   const { data, isLoading, isFetching } = useVehicles({
     limit: limitPerPage,
@@ -47,6 +53,14 @@ const ContainerVehicleList = () => {
   const pageNumbers =
     totalPages !== null ? generatePageNumbers(currentPage, totalPages) : null;
 
+  const {
+    data: vehicleDetail,
+    isLoading: isVehicleDetailLoading,
+    isFetching: isVehicleDetailFetching,
+    isRefetching: isVehicleDetailRefetching,
+    refetch: refetchVehicleDetail,
+  } = useVehicleById(selectedVehicle.id, { include: 'route,trip,stop' });
+
   const handleLimitChange = (value: string) => {
     setLimitPerPage(Number(value));
     setCurrentPage(0);
@@ -67,6 +81,13 @@ const ContainerVehicleList = () => {
     setCurrentPage(0);
   };
 
+  const handleViewDetail = (id: string) => {
+    setSelectedVehicle({
+      id,
+      isOpen: true,
+    });
+  };
+
   const vehicles = data?.data.map((vehicle) => {
     const routeId = vehicle.relationships.route.data?.id;
     const routeDetail = data?.included?.find(
@@ -81,28 +102,27 @@ const ContainerVehicleList = () => {
 
   return (
     <div className="layout relative flex flex-col gap-4">
-      {/* {isRefetching && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[2px] rounded-lg">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">
-              {'Memperbarui data...'}
-            </p>
-          </div>
-        </div>
-      )} */}
-
       <VehicleFilter
         onApplyFilter={handleApplyFilter}
         onReset={handleResetFilter}
       />
+
+      {isRefetching && (
+        <Badge
+          variant="secondary"
+          className="w-fit gap-1.5 py-1.5 px-3 font-normal"
+        >
+          <Loader2 className="size-3.5 animate-spin shrink-0" />
+          {'Memperbarui data...'}
+        </Badge>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {!isLoading &&
           vehicles &&
           vehicles.length > 0 &&
           vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            <VehicleCard key={vehicle.id} vehicle={vehicle} onViewDetail={handleViewDetail} />
           ))}
 
         {!isLoading && (!vehicles || vehicles.length === 0) && (
@@ -136,6 +156,17 @@ const ContainerVehicleList = () => {
         hasPrevPage={hasPrevPage}
         hasNextPage={hasNextPage}
         pageNumbers={pageNumbers}
+      />
+
+      <DialogDetail
+        isOpen={selectedVehicle.isOpen}
+        onClose={() => setSelectedVehicle({ id: '', isOpen: false })}
+        vehicleId={selectedVehicle.id}
+        vehicleDetail={vehicleDetail}
+        isLoading={isVehicleDetailLoading}
+        isFetching={isVehicleDetailFetching}
+        isRefetching={isVehicleDetailRefetching}
+        onRefresh={() => refetchVehicleDetail()}
       />
     </div>
   );

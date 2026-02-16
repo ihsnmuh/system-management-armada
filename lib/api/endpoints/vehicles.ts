@@ -2,10 +2,14 @@ import { apiClient } from '../client';
 import type {
   Vehicle,
   Route,
+  Trip,
+  Stop,
   ApiListResponse,
+  ApiDetailResponse,
   PaginationParams,
   FilterParams,
   VehicleFilterParams,
+  VehicleDetailParams,
 } from '@/types/api';
 
 const ENDPOINTS = {
@@ -43,14 +47,31 @@ function buildQuery(params?: VehicleListParams): string {
   return query ? `?${query}` : '';
 }
 
+function buildDetailQuery(params?: VehicleDetailParams): string {
+  if (!params?.include) return '';
+  const searchParams = new URLSearchParams();
+  searchParams.set('include', params.include);
+  return `?${searchParams.toString()}`;
+}
+
 export const vehicleKeys = {
   all: ['vehicles'] as const,
   list: (params?: VehicleListParams) => ['vehicles', 'list', params] as const,
+  getById: (id: string, params?: VehicleDetailParams) =>
+    ['vehicles', 'getById', id, params] as const,
 };
+
+const VEHICLE_DETAIL_INCLUDE = 'route,trip,stop';
 
 export const vehicleApi = {
   getAll: (params?: VehicleListParams) =>
     apiClient<ApiListResponse<Vehicle, Route>>(
       `${ENDPOINTS.BASE}${buildQuery(params)}`,
+    ),
+  getById: (id: string, params?: VehicleDetailParams) =>
+    apiClient<ApiDetailResponse<Vehicle, Route | Trip | Stop | Record<string, unknown>>>(
+      `${ENDPOINTS.BASE}/${id}${buildDetailQuery(
+        params ?? { include: VEHICLE_DETAIL_INCLUDE },
+      )}`,
     ),
 };

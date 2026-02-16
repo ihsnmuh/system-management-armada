@@ -3,6 +3,7 @@ import { Public_Sans, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import QueryProvider from './providers/query-provider';
 import Navbar from '@/components/Navbar';
+import 'leaflet/dist/leaflet.css';
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
