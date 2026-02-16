@@ -22,7 +22,7 @@ export function useRoutesInfinite(pageSize = ROUTES_PAGE_SIZE) {
   const result = useInfiniteQuery({
     queryKey: [...routeKeys.all, 'infinite', { pageSize }] as const,
     queryFn: ({ pageParam }) =>
-      routeApi.getAll({ limit: pageSize, offset: pageParam }),
+      routeApi.getAll({ limit: pageSize, offset: pageParam, sort: 'long_name' }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.data.length < pageSize) return undefined;
       return allPages.length * pageSize;
