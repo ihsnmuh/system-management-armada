@@ -29,6 +29,7 @@ import type {
     Trip,
     Vehicle,
 } from '@/types/api';
+import LeafletMap from './LeafletMap';
 
 function bearingToDirection(bearing: number | null): string {
     if (bearing === null) return '—';
@@ -450,7 +451,18 @@ export function DialogDetail({
                                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                         Lokasi Real-Time
                                     </p>
-                                    <div className="min-h-[200px] rounded-lg border border-dashed bg-muted/30" />
+                                    <div className="min-h-[200px] rounded-lg border border-dashed bg-muted/30">
+                                    <LeafletMap 
+                                        center={[stopDetail?.attributes?.latitude ?? 0, stopDetail?.attributes?.longitude ?? 0]} 
+                                        zoom={13} 
+                                        markers={[
+                                            {
+                                                id: 'center',
+                                                position: [stopDetail?.attributes?.latitude ?? 0, stopDetail?.attributes?.longitude ?? 0],
+                                            },
+                                        ]}
+                                    />
+                                    </div>
                                 </div>
                             </div>
                         </div>
