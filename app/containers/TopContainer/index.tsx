@@ -39,10 +39,10 @@ const TopContainer = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <TypographyH3 className="text-primary font-bold">
-            Dashboard Armada
+            Monitoring Kendaraan
           </TypographyH3>
           <TypographyMuted>
-            Monitoring sistem armada secara real-time
+            Pantau pergerakan kendaraan dan status operasional secara real-time
           </TypographyMuted>
         </div>
 

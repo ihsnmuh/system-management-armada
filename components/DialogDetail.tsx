@@ -17,6 +17,7 @@ import {
   Bus,
   CheckCircle2,
   Clock,
+  Info,
   Loader2,
   MapPin,
   RefreshCw,
@@ -37,6 +38,7 @@ import { useTripDetail } from '@/hooks/queries/use-trips';
 import { decodeMBTAPolyline } from '@/lib/decodepolymap';
 import { useSchedules } from '@/hooks/queries/use-schedules';
 import { bearingToDirection } from '@/lib/utils';
+import { TypographyH4 } from './Typography';
 
 function occupancyLabel(status: VehicleOccupancyStatus | null): string {
   if (!status) return '—';
@@ -318,10 +320,10 @@ export function DialogDetail({
               <div className="flex flex-col gap-4">
                 {/* Informasi Kendaraan */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold flex items-center gap-2">
-                    <CheckCircle2 className="size-4 text-emerald-600" />
+                  <TypographyH4 className="font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="size-6" />
                     Informasi Kendaraan
-                  </h3>
+                  </TypographyH4>
                   <div className="grid grid-cols-2 gap-3">
                     <DataRow
                       label="Vehicle ID"
@@ -363,10 +365,10 @@ export function DialogDetail({
                 {/* Informasi Rute */}
                 {routeDetail && (
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <Route className="size-4" />
+                    <TypographyH4 className="font-semibold flex items-center gap-2">
+                      <Route className="size-6" />
                       Informasi Rute
-                    </h3>
+                    </TypographyH4>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <span
@@ -408,10 +410,11 @@ export function DialogDetail({
 
                 {/* Informasi Perjalanan (Trip) */}
                 {tripDetail && (
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">
+                  <div className="space-y-3">   
+                    <TypographyH4 className="font-semibold  flex items-center gap-2"> 
+                    <Info className='size-6'/> 
                       Informasi Perjalanan
-                    </h3>
+                    </TypographyH4>
                     <div className="grid grid-cols-2 gap-3">
                       <DataRow label="Trip ID" value={tripDetail.id} />
                       <DataRow
@@ -468,10 +471,10 @@ export function DialogDetail({
                 {/* Informasi Halte */}
                 {stopDetail && (
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold flex items-center gap-2">
-                      <MapPin className="size-4" />
+                    <TypographyH4 className="font-semibold flex items-center gap-2">
+                      <MapPin className="size-6" />
                       Informasi Halte Selanjutnya
-                    </h3>
+                    </TypographyH4>
                     <div className="rounded-lg border p-3 space-y-2">
                       <DataRow
                         label="Nama Halte"
