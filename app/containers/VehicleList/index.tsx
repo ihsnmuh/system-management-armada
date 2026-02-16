@@ -7,10 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generatePageNumbers, parseOffsetFromUrl } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import VehicleFilter from '@/components/VehicleFilter';
 import { DialogDetail } from '@/components/DialogDetail';
-import type { Route } from '@/types/api';
 
 const ContainerVehicleList = () => {  
   const [limitPerPage, setLimitPerPage] = useState(10);

@@ -59,7 +59,7 @@ const DEFAULT_TILE_ATTRIBUTION =
 
 function LeafletMap({
   center,
-  zoom = 13,
+  zoom = 10,
   markers,
   shapeCoordinates,
   schedulePoints,
@@ -68,6 +68,8 @@ function LeafletMap({
   tileAttribution = DEFAULT_TILE_ATTRIBUTION,
   colorRoute,
 }: LeafletMapProps) {
+
+
   useEffect(() => {
     // Fix icon marker Leaflet yang sering hilang di bundler (Next/Webpack/Turbopack).
     // Dieksekusi hanya di browser (useEffect) supaya aman dari SSR.

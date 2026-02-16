@@ -216,17 +216,17 @@ export function DialogDetail({
                   },
               ]
             : []),
-        ...(stopPosition
-            ? [
-                  {
-                      id: 'stop',
-                      position: stopPosition,
-                      popup: stopDetail?.attributes?.name
-                          ? `Halte: ${stopDetail.attributes.name}`
-                          : 'Halte',
-                  },
-              ]
-            : []),
+        // ...(stopPosition
+        //     ? [
+        //           {
+        //               id: 'stop',
+        //               position: stopPosition,
+        //               popup: stopDetail?.attributes?.name
+        //                   ? `Halte: ${stopDetail.attributes.name}`
+        //                   : 'Halte',
+        //           },
+        //       ]
+        //     : []),
     ];
 
     return (
