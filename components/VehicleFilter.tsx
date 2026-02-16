@@ -17,13 +17,49 @@ const TRIP_LOAD_MORE_SENTINEL = '__LOAD_MORE_TRIPS__';
 const PAGE_SIZE = 20;
 
 /** GTFS route_type: 0=Light Rail, 1=Heavy Rail, 2=Commuter Rail, 3=Bus, 4=Ferry */
+const ROUTE_TYPE_LABEL: Record<number, string> = {
+  0: 'Light Rail',
+  1: 'Heavy Rail',
+  2: 'Commuter Rail',
+  3: 'Bus',
+  4: 'Ferry',
+};
+
+/** Warna badge per tipe — mengikuti palet resmi MBTA (Green/Red/Orange/Blue Line, Commuter Rail, Bus, Ferry) */
+const ROUTE_TYPE_COLOR: Record<number, { bg: string; text: string }> = {
+  0: { bg: '#00843D', text: '#ffffff' }, // Light Rail — Green Line
+  1: { bg: '#DA291C', text: '#ffffff' }, // Heavy Rail — Red Line
+  2: { bg: '#80276C', text: '#ffffff' }, // Commuter Rail — ungu MBTA
+  3: { bg: '#FFC72C', text: '#000000' }, // Bus — gold MBTA (teks gelap untuk kontras)
+  4: { bg: '#008EAA', text: '#ffffff' }, // Ferry — teal MBTA
+};
+
 const ROUTE_TYPE_OPTIONS: FilterOption[] = [
   { value: '0', label: 'Light Rail', searchText: 'light rail' },
   { value: '1', label: 'Heavy Rail', searchText: 'heavy rail' },
   { value: '2', label: 'Commuter Rail', searchText: 'commuter rail' },
   { value: '3', label: 'Bus', searchText: 'bus' },
   { value: '4', label: 'Ferry', searchText: 'ferry' },
-];
+].map((opt) => {
+  const typeNum = Number(opt.value);
+  const colors = ROUTE_TYPE_COLOR[typeNum] ?? { bg: '#6b7280', text: '#ffffff' };
+  return {
+    ...opt,
+    label: (
+      <span className="flex min-w-0 items-center gap-1.5 text-left">
+        <span
+          className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+          style={{
+            backgroundColor: colors.bg,
+            color: colors.text,
+          }}
+        >
+          {opt.label}
+        </span>
+      </span>
+    ),
+  };
+});
 
 export interface VehicleFilterApplyPayload {
   routeIds: string[];
@@ -117,11 +153,34 @@ const VehicleFilter = ({ onApplyFilter, onReset }: VehicleFilterProps) => {
 
   const routeOptions = useMemo<FilterOption[]>(
     () =>
-      routes.map((r) => ({
-        value: r.id,
-        label: r.attributes.long_name,
-        searchText: r.attributes.long_name,
-      })),
+      routes.map((r) => {
+        const typeName =
+          ROUTE_TYPE_LABEL[r.attributes.type] ?? `Tipe ${r.attributes.type}`;
+        const bgColor = r.attributes.color?.startsWith('#')
+          ? r.attributes.color
+          : `#${r.attributes.color}`;
+        const textColor = r.attributes.text_color?.startsWith('#')
+          ? r.attributes.text_color
+          : `#${r.attributes.text_color ?? 'ffffff'}`;
+        return {
+          value: r.id,
+          label: (
+            <span className="flex min-w-0 items-center gap-1.5 text-left">
+              <span className="truncate">{r.attributes.long_name}</span>
+              <span
+                className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium"
+                style={{
+                  backgroundColor: bgColor,
+                  color: textColor,
+                }}
+              >
+                {typeName}
+              </span>
+            </span>
+          ),
+          searchText: `${r.attributes.long_name} ${typeName}`.toLowerCase(),
+        };
+      }),
     [routes],
   );
 
